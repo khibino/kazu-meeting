@@ -9,7 +9,15 @@ targets = \
 	Q2_35.o Q2_36.o Q2_37.o Q2_39.o \
 	Painter.o \
 	Q2_44.o Q2_45.o \
-	Vect.o
+	Vect.o \
+	Q2_46.o \
+	Frame.o \
+	Q2_47.o \
+	Segment.o \
+	Q2_48.o \
+	FuncPainter.o \
+	Q2_49.o
+
 
 %.o: %.hs
 	$(HC) $(HFLAGS) -c $< -o $@
