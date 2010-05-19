@@ -2,7 +2,7 @@
 -- $Header$
 --
 
-module SplitPainter (module SplitPainter) where
+module Painter (module Painter) where
 
 class Painter p where
   beside :: p -> p -> p

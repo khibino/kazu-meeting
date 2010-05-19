@@ -7,8 +7,9 @@ HFLAGS = -Wall -fno-warn-type-defaults
 
 targets = \
 	Q2_35.o Q2_36.o Q2_37.o Q2_39.o \
-	SplitPainter.o \
-	Q2_44.o Q2_45.o
+	Painter.o \
+	Q2_44.o Q2_45.o \
+	Vect.o
 
 %.o: %.hs
 	$(HC) $(HFLAGS) -c $< -o $@

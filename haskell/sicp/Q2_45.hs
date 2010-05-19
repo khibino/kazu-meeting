@@ -4,7 +4,7 @@
 
 module Q2_45 (module Q2_45) where
 
-import SplitPainter
+import Painter
 
 split :: (Integral int, Painter p) =>
          (p -> p -> p) -> (p -> p -> p) -> p -> int -> p

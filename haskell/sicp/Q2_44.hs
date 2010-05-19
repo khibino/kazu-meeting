@@ -4,7 +4,7 @@
 
 module Q2_44 (module Q2_44) where
 
-import SplitPainter
+import Painter
 
 inlineUpSplit :: (Integral int, Painter p) => p -> int -> p
 inlineUpSplit painter = f
