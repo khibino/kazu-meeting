@@ -20,7 +20,7 @@ all: $(targets)
 
 push: rebuild
 	hg commit
-	hg shrink
+	hg kwshrink
 	hg kwexpand
 	hg push
 
