@@ -14,21 +14,19 @@ import FuncPainter
 vectList :: (Fractional num, Vect vec) => [(num, num)] -> [vec num]
 vectList = map (uncurry makeVect)
 
---                   [(0.0, 0.0), (1.0, 0.0),
---                    (0.0, 1.0), (1.0, 1.0)]
-zero  = makeVect 0.0 0.0
-edge1 = makeVect 1.0 0.0
-edge2 = makeVect 0.0 1.0
-e1e2  = addVect edge1 edge2
+vertexes :: (Fractional num, Vect vec) => [vec num]
+vertexes = vectList [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+
+zero  = vertexes !! 0
+edge1 = vertexes !! 1
+e1e2  = vertexes !! 2
+edge2 = vertexes !! 3
 
 zero, edge1, edge2, e1e2 :: (Fractional num, Vect vec) => vec num
 
-vertexList :: (Fractional num, Vect vec) => [vec num]
-vertexList = [zero, edge1, e1e2, edge2]
-
 vecPairN :: (Fractional num, Vect vec) => Int -> (vec num, vec num)
 vecPairN n = (vc !! n, vc !! (n + 1))
-  where vc = cycle vertexList
+  where vc = cycle vertexes
 
 painterA = segments2painter $ map (seg . vecPairN) [0, 1, 2, 3]
   where seg (s, e) = makeSegment s e
