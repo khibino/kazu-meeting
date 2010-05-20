@@ -17,6 +17,7 @@ vectList = map (uncurry makeVect)
 vertexes :: (Fractional num, Vect vec) => [vec num]
 vertexes = vectList [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
 
+
 zero  = vertexes !! 0
 edge1 = vertexes !! 1
 e1e2  = vertexes !! 2
@@ -24,19 +25,18 @@ edge2 = vertexes !! 3
 
 zero, edge1, edge2, e1e2 :: (Fractional num, Vect vec) => vec num
 
-vecPairN :: (Fractional num, Vect vec) => Int -> (vec num, vec num)
-vecPairN n = (vc !! n, vc !! (n + 1))
+vecPairs :: (Fractional num, Vect vec) => [(vec num, vec num)]
+vecPairs = take 4 $ zip vc $ tail vc
   where vc = cycle vertexes
 
-painterA = segments2painter $ map (seg . vecPairN) [0, 1, 2, 3]
-  where seg (s, e) = makeSegment s e
+painterA = segments2painter $ map (uncurry makeSegment) vecPairs
 
 painterB = segments2painter [seg zero  e1e2,
                              seg edge1 edge2]
   where seg = makeSegment
          
 painterC = segments2painter $ map seg [0, 1, 2, 3]
-  where mid n = scaleVect (1 / 2) $ uncurry addVect $ vecPairN n
+  where mid n = scaleVect (1 / 2) $ uncurry addVect $ vecPairs !! n
         seg n = makeSegment (mid n) $ mid $ (+) n 1
 
 -- left top
@@ -75,10 +75,8 @@ linesLT, linesLB, linesB, linesRB, linesRT :: (Fractional num, Vect vec) => [vec
 
 painterD = segments2painter
            $ flatsegs [linesLT, linesLB, linesB, linesRB, linesRT]
-  where segs []     = ([], Nothing)
-        segs (v:vs) =
-          foldl' (\(rv, Just s) e -> (makeSegment s e : rv, Just e)) ([], Just v) vs
+  where segs vs = zipWith makeSegment (init vs) (tail vs)
         flatsegs vss =
-          foldl' (\res vecs -> res ++ (fst . segs) vecs) [] vss
+          foldl' (\res vecs -> res ++ segs vecs) [] vss
 
 painterA, painterB, painterC, painterD :: (Frame f, Fractional num, Vect vec) => f (vec num) -> ()
