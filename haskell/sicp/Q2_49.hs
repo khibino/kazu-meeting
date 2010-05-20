@@ -36,7 +36,7 @@ painterB = segments2painter [seg zero  e1e2,
   where seg = makeSegment
          
 painterC = segments2painter $ map seg [0, 1, 2, 3]
-  where mid n = let (v1, v2) = vecPairN n in scaleVect (1 / 2) $ addVect v1 v2
+  where mid n = scaleVect (1 / 2) $ uncurry addVect $ vecPairN n
         seg n = makeSegment (mid n) $ mid $ (+) n 1
 
 -- left top
