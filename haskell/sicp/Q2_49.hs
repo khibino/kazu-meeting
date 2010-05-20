@@ -4,11 +4,18 @@
 
 module Q2_49 (module Q2_49) where
 
+import Data.List
+
 import Vect
 import Frame
 import Segment
 import FuncPainter
 
+vectList :: (Fractional num, Vect vec) => [(num, num)] -> [vec num]
+vectList = map (uncurry makeVect)
+
+--                   [(0.0, 0.0), (1.0, 0.0),
+--                    (0.0, 1.0), (1.0, 1.0)]
 zero  = makeVect 0.0 0.0
 edge1 = makeVect 1.0 0.0
 edge2 = makeVect 0.0 1.0
@@ -68,6 +75,12 @@ linesRT = [makeVect 1.0  0.4,
           
 linesLT, linesLB, linesB, linesRB, linesRT :: (Fractional num, Vect vec) => [vec num]
 
-painterD = undefined
+painterD = segments2painter
+           $ flatsegs [linesLT, linesLB, linesB, linesRB, linesRT]
+  where segs []     = ([], Nothing)
+        segs (v:vs) =
+          foldl' (\(rv, Just s) e -> (makeSegment s e : rv, Just e)) ([], Just v) vs
+        flatsegs vss =
+          foldl' (\res vecs -> res ++ (fst . segs) vecs) [] vss
 
 painterA, painterB, painterC, painterD :: (Frame f, Fractional num, Vect vec) => f (vec num) -> ()
