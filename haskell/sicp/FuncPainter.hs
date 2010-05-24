@@ -46,3 +46,9 @@ instance (Frame f, Fractional num, Vect vec) => Painter (FuncP f vec num) where
           paintLeft  = transformPainter painter1 (makeVect 0.0 0.0) splitPoint (makeVect 0.0 1.0)
           paintRight = transformPainter painter2 splitPoint (makeVect 1.0 0.0) (makeVect 0.5 1.0)
           f frame = foldl' (\() () -> ()) () [paintLeft frame, paintRight frame]
+  
+  below (FuncP painter1) (FuncP painter2) = FuncP f
+    where splitPoint = (makeVect 0.0 0.5)
+          paintBottom = transformPainter painter1 (makeVect 0.0 0.0) splitPoint (makeVect 1.0 0.0)
+          paintTop    = transformPainter painter2 splitPoint (makeVect 0.0 1.0) (makeVect 1.0 0.5)
+          f frame = foldl' (\() () -> ()) () [paintBottom frame, paintTop frame]

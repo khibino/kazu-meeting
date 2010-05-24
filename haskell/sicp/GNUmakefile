@@ -16,7 +16,8 @@ targets = \
 	Segment.o \
 	Q2_48.o \
 	FuncPainter.o \
-	Q2_49.o
+	Q2_49.o \
+	Algebra.o
 
 
 %.o: %.hs
