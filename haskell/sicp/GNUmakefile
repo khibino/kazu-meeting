@@ -3,7 +3,7 @@
 ##
 
 HC = ghc
-HFLAGS = -Wall -fno-warn-type-defaults
+HFLAGS = -Wall
 
 targets = \
 	Q2_35.o Q2_36.o Q2_37.o Q2_39.o \
@@ -18,6 +18,7 @@ targets = \
 	FuncPainter.o \
 	Q2_49.o \
 	Algebra.o
+
 
 
 %.o: %.hs

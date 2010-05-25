@@ -30,7 +30,7 @@ accumulateList = foldr
 countLeaves :: (Integral int) => SCList int -> int
 countLeaves = accumulate (+) 0 1
 
-testData :: (Integral int) => SCList int
+testData :: SCList Int
 testData =
   fromList [1, 2] `Cons` fromList [3, 4]
 
