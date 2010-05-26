@@ -32,8 +32,9 @@ intersectionSet = f
 unionSet :: (Ord t) => [t] -> [t] -> [t]
 unionSet = f
   where f [] ys  = ys
-        f xs  [] = xs
+        f xs []  = xs
         f set1 @ (x:xs) set2 @ (y:ys)
           | x == y = x : f xs ys
           | x <  y = x : f xs set2
           | x >  y = y : f set1 ys
+        --f _ _ = undefined
