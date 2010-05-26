@@ -17,8 +17,8 @@ targets = \
 	Q2_48.o \
 	FuncPainter.o \
 	Q2_49.o \
-	Algebra.o
-
+	Algebra.o \
+	Set.o 
 
 
 %.o: %.hs
