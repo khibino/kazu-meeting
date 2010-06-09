@@ -18,7 +18,9 @@ sources = \
 	FuncPainter.hs \
 	Q2_49.hs \
 	Algebra.hs \
-	Set.hs 
+	Set.hs \
+	BinTree.hs \
+	Q2_63.hs
 
 targets = $(sources:.hs=.o)
 
@@ -26,11 +28,10 @@ targets = $(sources:.hs=.o)
 %.o: %.hs
 	$(HC) $(HFLAGS) -c $< -o $@
 
-rebuild: clean all
+all: $(targets)
 	hlint --utf8 --color $(sources)
 
-all: $(targets)
-
+rebuild: clean all
 
 push: rebuild
 	hg commit
