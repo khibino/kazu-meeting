@@ -28,6 +28,7 @@ intersectionSet = f
           | x == y = x : f xs ys
           | x <  y = f xs set2
           | x >  y = f set1 ys
+          | otherwise = undefined
 
 unionSet :: (Ord t) => [t] -> [t] -> [t]
 unionSet = f
@@ -37,4 +38,4 @@ unionSet = f
           | x == y = x : f xs ys
           | x <  y = x : f xs set2
           | x >  y = y : f set1 ys
-        --f _ _ = undefined
+          | otherwise = undefined

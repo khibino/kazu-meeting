@@ -33,40 +33,15 @@ minus x = Num (-x)
 baseE :: Formula num
 baseE  = Var "e"
   
-numberP :: Formula num -> Bool
-numberP = p
-  where p (Num _) = True
-        p _       = False
-
-variableP :: Formula num -> Bool
-variableP = p
-  where p (Var _) = True
-        p _       = False
-
-sameValiableP :: Formula num -> Formula num -> Bool
-sameValiableP = p
-  where p (Var a) (Var b) = a == b
-        p _            _            = False
-
-sumP :: Formula num -> Bool
-sumP = p
-  where p (_ :+ _) = True
-        p _        = False
-
-makeSum :: Num num => Formula num -> Formula num -> Formula num
-makeSum = f
+(+!) :: Num num => Formula num -> Formula num -> Formula num
+(+!) = f
   where f (Num 0) a2      = a2
         f a1      (Num 0) = a1
         f (Num a) (Num b) = Num (a + b)
         f a1      a2      = a1 :+ a2
 
-productP :: Formula num -> Bool
-productP = p
-  where p (_ :* _) = True
-        p _        = False
-
-makeProduct :: Num num => Formula num -> Formula num -> Formula num
-makeProduct = f
+(*!) :: Num num => Formula num -> Formula num -> Formula num
+(*!) = f
   where f (Num 0)    _          = zero
         f _          (Num 0)    = zero
         f (Num 1)    m2         = m2
@@ -76,32 +51,19 @@ makeProduct = f
         f (Num a)  (Num b)  = Num (a * b)
         f m1      m2        = m1 :* m2
         
-exponentiationP :: Formula num -> Bool
-exponentiationP = p
-  where p (_ :^ _) = True
-        p _         = False
-
-makeExponentiation :: (Ord num, Num num) => Formula num -> Formula num -> Formula num
-makeExponentiation = f
+(^!) :: (Ord num, Num num) => Formula num -> Formula num -> Formula num
+(^!) = f
   where f _       (Num 0) = one
         f (Num 0) (Num a)
           | a > 0           = zero
           | otherwise       = undefined
         f (Num 1) _         = one
         f b         (Num 1) = b
-        f b         (ea :+ eb) = makeProduct (f b ea) (f b eb)
+        f b         (ea :+ eb) = f b ea *! f b eb
         f (Var "e") (Log a) = a
         f (Var "e") (ea :* Log eb) = f eb ea
         f (Var "e") (Log ea :* eb) = f ea eb
         f b       e       = b :^ e
-
--- negateP = p
---   where p (Neg _) = True
---         p _       = False
-
--- makeNegate = f
---   where f (Num a) = minus a
---         f _       = 
 
 logarithmP :: Formula num -> Bool
 logarithmP  = p
@@ -115,29 +77,13 @@ makeLogarithm  = f
           | otherwise      = undefined
         f (Var "e")        = one
         f ((Var "e") :^ e) = e
-        f (b         :^ e) = makeProduct e $ makeLogarithm b
+        f (b         :^ e) = e *! makeLogarithm b
         f l                = Log l
 
--- deriv0 :: Num num => Formula num -> Formula num -> Formula num
--- deriv0 expr var
---   | numberP   expr = Num 0
---   | variableP expr = Num (if sameValiableP expr var then 1 else 0)
---   | sumP      expr = makeSum (deriv0 (addend expr) var) (deriv0 (augend expr) var)
---   | productP  expr = makeSum
---                     (makeProduct
---                      (multiplier expr)
---                      (deriv0 (multiplicand expr) var))
---                     (makeProduct
---                      (deriv0 (multiplier expr) var)
---                      (multiplicand expr))
---   | otherwise     = error ("unknown expression type -- DERIV " ++ show expr)
+--(*!) = makeProduct
+--(^!) = makeExponentiation
 
-
-(+!) = makeSum
-(*!) = makeProduct
-(^!) = makeExponentiation
-
-(+!), (*!), (^!) :: (Ord num, Num num) => Formula num -> Formula num -> Formula num
+--(^!) :: (Ord num, Num num) => Formula num -> Formula num -> Formula num
 
 
 deriv :: (Ord num, Num num) => Formula num -> Var -> Formula num
@@ -152,7 +98,7 @@ deriv expr var = rec expr
         rec (a :* b) = a *! rec b +! rec a *! b
         rec (a :^ b) = baseE ^! (b *! logA) *! (rec b *! logA +! b *! a ^! minus 1 *! rec a)
           where logA   = makeLogarithm a
-        rec (Log  a) = makeProduct (rec a) $ makeExponentiation (Var "e") $ makeProduct (Num (-1)) a
+        rec (Log  a) = rec a *! (Var "e") ^! Num (-1) *! a
 
 --        rec aexpr       = error ("unknown expression type -- DERIV" ++ show aexpr)
 
@@ -167,4 +113,3 @@ deriv expr var = rec expr
 -- --                        = b' x * (log.a) x + b x * a x ^ (-1) * a' x
 -- ((e^)'.h) x * h' x
 --  --> (e^) (b x * (log.a) x) * (b' x * (log.a) x + b x * a x ^ (-1) * a' x)
-
