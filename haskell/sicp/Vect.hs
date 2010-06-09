@@ -20,7 +20,7 @@ subVect vA vB =
 
 scaleVect :: (Vect v, Num num) => num -> v num -> v num
 scaleVect factor vec =
-  makeVect ((xcorVect vec) * factor) (ycorVect vec * factor)
+  makeVect (xcorVect vec * factor) (ycorVect vec * factor)
   
 data V2 a = V2 a a
 

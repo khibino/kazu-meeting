@@ -3,16 +3,14 @@ module Q2_35 (module Q2_35) where
 data SCList a = Nil | Atom a | Cons (SCList a) (SCList a)
 
 fromList :: [a] -> SCList a
-fromList []   = Nil
-fromList (x:xs) = Atom x `Cons` fromList xs
-
+fromList = foldr (Cons . Atom) Nil
 
 -- オリジナル
 justCountLeaves :: (Integral int) => SCList int -> int
 justCountLeaves = f
   where f Nil = 0
         f (Atom _) = 1
-        f (Cons car cdr) = (f car) + (f cdr)
+        f (Cons car cdr) = f car + f cdr
 
 
 accumulate :: (t -> t -> t) -> t -> t -> SCList t1 -> t

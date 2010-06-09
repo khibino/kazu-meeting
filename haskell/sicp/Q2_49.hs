@@ -17,7 +17,8 @@ vectList = map (uncurry makeVect)
 vertexes :: (Fractional num, Vect vec) => [vec num]
 vertexes = vectList [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
 
-zero  = vertexes !! 0
+--zero  = vertexes !! 0
+zero  = head vertexes
 edge1 = vertexes !! 1
 e1e2  = vertexes !! 2
 edge2 = vertexes !! 3
@@ -35,7 +36,7 @@ painterA = segments2painter $ map (uncurry makeSegment) vectPairs
 painterB = segments2painter [makeSegment zero  e1e2,
                              makeSegment edge1 edge2]
 
-painterC = segments2painter $ map (uncurry makeSegment) $ zip meds $ rotList meds
+painterC = segments2painter $ zipWith makeSegment meds (rotList meds)
   where meds = map (scaleVect (1 / 2) . uncurry addVect) vectPairs
 
 -- left top
@@ -75,7 +76,7 @@ linesLT, linesLB, linesB, linesRB, linesRT :: (Fractional num, Vect vec) => [vec
 painterD = segments2painter
            $ flatsegs [linesLT, linesLB, linesB, linesRB, linesRT]
   where segs vs = zipWith makeSegment (init vs) (tail vs)
-        flatsegs vss =
-          foldl' (\res vecs -> res ++ segs vecs) [] vss
+        flatsegs =
+          foldl' (\res vecs -> res ++ segs vecs) []
 
 painterA, painterB, painterC, painterD :: (Frame f, Fractional num, Vect vec) => f (vec num) -> ()

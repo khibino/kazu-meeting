@@ -76,7 +76,7 @@ makeLogarithm  = f
           | a > 0          = Log $ Num a
           | otherwise      = undefined
         f (Var "e")        = one
-        f ((Var "e") :^ e) = e
+        f (Var "e" :^ e) = e
         f (b         :^ e) = e *! makeLogarithm b
         f l                = Log l
 
@@ -98,7 +98,7 @@ deriv expr var = rec expr
         rec (a :* b) = a *! rec b +! rec a *! b
         rec (a :^ b) = baseE ^! (b *! logA) *! (rec b *! logA +! b *! a ^! minus 1 *! rec a)
           where logA   = makeLogarithm a
-        rec (Log  a) = rec a *! (Var "e") ^! Num (-1) *! a
+        rec (Log  a) = rec a *! Var "e" ^! Num (-1) *! a
 
 --        rec aexpr       = error ("unknown expression type -- DERIV" ++ show aexpr)
 

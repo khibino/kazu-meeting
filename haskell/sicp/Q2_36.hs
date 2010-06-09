@@ -6,6 +6,6 @@ accumulateListN :: (a -> b -> b) -> b -> [[a]] -> [b]
 accumulateListN op ini = f
   where f ([]:_) = []
         f xs     =
-          (accumulateList  op ini $ map head xs) :
-          (f $ map tail xs)
+          accumulateList  op ini (map head xs) :
+          f (map tail xs)
           --(accumulateListN op ini $ map tail xs)

@@ -5,26 +5,29 @@
 HC = ghc
 HFLAGS = -Wall
 
-targets = \
-	Q2_35.o Q2_36.o Q2_37.o Q2_39.o \
-	Painter.o \
-	Q2_44.o Q2_45.o \
-	Vect.o \
-	Q2_46.o \
-	Frame.o \
-	Q2_47.o \
-	Segment.o \
-	Q2_48.o \
-	FuncPainter.o \
-	Q2_49.o \
-	Algebra.o \
-	Set.o 
+sources = \
+	Q2_35.hs Q2_36.hs Q2_37.hs Q2_39.hs \
+	Painter.hs \
+	Q2_44.hs Q2_45.hs \
+	Vect.hs \
+	Q2_46.hs \
+	Frame.hs \
+	Q2_47.hs \
+	Segment.hs \
+	Q2_48.hs \
+	FuncPainter.hs \
+	Q2_49.hs \
+	Algebra.hs \
+	Set.hs 
+
+targets = $(sources:.hs=.o)
 
 
 %.o: %.hs
 	$(HC) $(HFLAGS) -c $< -o $@
 
 rebuild: clean all
+	hlint --utf8 --color $(sources)
 
 all: $(targets)
 
