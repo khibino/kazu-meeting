@@ -20,7 +20,8 @@ sources = \
 	Algebra.hs \
 	Set.hs \
 	BinTree.hs \
-	Q2_63.hs
+	Q2_63.hs \
+	Huffman.hs
 
 targets = $(sources:.hs=.o)
 

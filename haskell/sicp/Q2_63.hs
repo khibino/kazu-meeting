@@ -2,39 +2,39 @@ module Q2_63 (module Q2_63) where
 
 import BinTree
 
-fig2x16x0 = Node
-             (Node
-              (Node Leaf 1 Leaf)
+fig2x16x0 = Trunk
+             (Trunk
+              (Trunk Leaf 1 Leaf)
               3
-              (Node Leaf 5 Leaf))
+              (Trunk Leaf 5 Leaf))
              7
-             (Node
+             (Trunk
               Leaf
               9
-              (Node Leaf 11 Leaf))
+              (Trunk Leaf 11 Leaf))
              
-fig2x16x1 = Node
-            (Node Leaf 1 Leaf)
+fig2x16x1 = Trunk
+            (Trunk Leaf 1 Leaf)
             3
-            (Node
-             (Node Leaf 5 Leaf)
+            (Trunk
+             (Trunk Leaf 5 Leaf)
              7
-             (Node
+             (Trunk
               Leaf
               9
-              (Node Leaf 11 Leaf)))
+              (Trunk Leaf 11 Leaf)))
 
 
-fig2x16x2 = Node
-            (Node
-             (Node Leaf 1 Leaf)
+fig2x16x2 = Trunk
+            (Trunk
+             (Trunk Leaf 1 Leaf)
              3
              Leaf)
             5
-            (Node
-             (Node Leaf 7 Leaf)
+            (Trunk
+             (Trunk Leaf 7 Leaf)
              9
-             (Node Leaf 11 Leaf))
+             (Trunk Leaf 11 Leaf))
 
 fig2x16x0, fig2x16x1, fig2x16x2 :: Tree Int
 
@@ -63,6 +63,10 @@ g(m) + 1 = 2 * ( g(m - 1) + 1 ) = ... = 2^m * (g(0) + 1) = 2^m = n + 1 = O(n)
 
       f(m) = 2 * f(m - 1) + 2^(m-1)
                             ~~~~~~~appendとconsのコスト
+
+しかしこれは strict な評価戦略の場合である。
+lazy の場合には append のコストは
+
 
 2 * f(m-1) = 2^2 * f(m - 2) + 2^(m-1)
 
