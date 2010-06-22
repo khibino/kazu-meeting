@@ -44,6 +44,9 @@ type Compose a = Seq a
 empty :: Compose a
 empty  = Seq.empty
 
+-- 整列済みの列への挿入時の連結のコストを
+-- 汎用シーケンスの型 (Data.Sequence.Seq) を利用することで抑えている
+-- 長さを n とすれば挿入コストは log n
 insert :: Ord a => Compose a -> a -> Compose a
 insert cseq akey = f (Seq.length cseq) cseq
   where f 0 cseq' = akey <| cseq'
@@ -114,6 +117,7 @@ showTreeCodes tree =  rec tree ""
   where rec (Leaf  (chr, _)) bits = chr ++ ":" ++ reverse bits ++ "\n"
         rec (Br l r _) bits = rec l ('0' : bits) ++ rec r ('1' : bits)
 
+-- パターン照合が冗長なのが気になって encodeSymbolOther から書き直した
 encodeSymbol :: String -> Tree -> String
 encodeSymbol sym = check . (:[]) . tryE ""
   where err = error ("Unknown symbol: " ++ sym)
@@ -182,3 +186,23 @@ stmtQ2q70 =  words $ unlines ["Get a job",
 
 encodeQ2q70 :: String
 encodeQ2q70 =  encode stmtQ2q70 treeQ2q70
+
+
+--問題 2.71
+
+--   v0
+--  /  \
+-- s0  v1 
+--    /  \
+--   s1  v2
+--         .
+--          .
+--           \
+--           v n-2
+--          /   \
+--       s n-2  s n-1 
+
+
+--問題 2.72
+--  記号集合がどちらの枝かを判定するのに Set.member を利用する(log(n)) ことと
+--  Tree の深さを考える (log(n) 〜 n ) と log(n)*log(n) 〜 n*log(n)
