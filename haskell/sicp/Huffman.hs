@@ -70,7 +70,7 @@ composeStep mergeF = step . Seq.viewl
   where step EmptyL      = undefined
         step (l0 :< xs0) = f1 (Seq.viewl xs0)
           where f1 EmptyL       = Nothing
-                f1 (l1 :< rest) = Just (insert rest (mergeF l0 l1))
+                f1 (l1 :< rest) = Just (insert rest (mergeF l1 l0))
 
 makeEncoder :: (Ord a) => (a -> a -> a) -> Compose a -> a
 makeEncoder mergeF cseq = let (rv :< _) = Seq.viewl $ go cseq in rv
@@ -108,8 +108,8 @@ decode bits tree =
             Leaf (s, _) -> s : decode_1 bs tree
             nextN       -> decode_1 bs nextN
         choose b (Br l r _) | b == '0'  = l
-                               | b == '1'  = r
-                               | otherwise = undefined
+                            | b == '1'  = r
+                            | otherwise = undefined
         choose _ (Leaf _)      = undefined
 
 showTreeCodes      :: Tree -> String
@@ -137,8 +137,8 @@ encodeSymbolOther sym = f []
         f bits l@(Leaf _) | contains l = bits
                           | otherwise  = err
         f bits (Br l r _) | contains l = f (bits ++ "0") l
-                             | contains r = f (bits ++ "1") r
-                             | otherwise  = err
+                          | contains r = f (bits ++ "1") r
+                          | otherwise  = err
 
 -- 問題 2.68
 encode :: [String] -> Tree -> String
