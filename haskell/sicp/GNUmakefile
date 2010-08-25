@@ -18,6 +18,7 @@ sources = \
 	FuncPainter.hs \
 	Q2_49.hs \
 	Algebra.hs \
+	AlgebraD.hs \
 	Set.hs \
 	BinTree.hs \
 	Q2_63.hs \

@@ -15,7 +15,7 @@ data Formula num = Num num
 --                 | Neg { negateArg :: Formula num }
                  | Log (Formula num)
                  deriving (Show, Eq)
-                          
+
 infixl 6 :+, +!
 infixl 7 :*, *!
 infixr 8 :^, ^!
