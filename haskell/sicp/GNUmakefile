@@ -23,7 +23,8 @@ sources = \
 	BinTree.hs \
 	Q2_63.hs \
 	Huffman.hs \
-	InsatiableE.hs
+	InsatiableE.hs \
+	Complex.hs
 
 targets = $(sources:.hs=.o)
 
