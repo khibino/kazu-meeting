@@ -29,7 +29,7 @@ minus :: Num num => num -> Formula num
 minus x = Num (-x)
 
 -- special variable e is natural logalithm base
--- 変数eは自然対数の底として特別あつかいする
+-- 変数eは自然対数の底として特別に扱う
 baseE :: Formula num
 baseE  = Var "e"
   

@@ -8,12 +8,13 @@ a.
 少なくとも operator, operands 以外のインターフェースにする必要がある。
 
 b.
-プログラムに記述した
+プログラムに記述した - add' mul'
 
 c.
-プログラムに記述した
+プログラムに記述した - hat'
 
 d.
+プログラムに記述した - derivD
 
 -}
 
@@ -45,7 +46,7 @@ minus :: Num num => num -> Formula num
 minus x = Num (-x)
 
 -- special variable e is natural logalithm base
--- 変数eは自然対数の底として特別あつかいする
+-- 変数eは自然対数の底として特別に扱う
 baseE :: Formula num
 baseE  = Var "e"
   
@@ -108,14 +109,33 @@ hat' var a b = baseE ^! (b *! logA) *! (d b *! logA +! b *! a ^! minus 1 *! d a)
 
 add', mul', hat' :: (Ord num, Num num) => Var -> Formula num -> Formula num -> Formula num
 
+data Operation = Deriv
 
-deriv :: (Ord num, Num num) => Formula num -> Var -> Formula num
-deriv expr var = d expr
+sumM  Deriv = add'
+
+prodM Deriv = mul'
+
+expM Deriv = hat'
+
+sumM, prodM, expM :: (Ord num, Num num) => Operation -> Var -> Formula num -> Formula num -> Formula num
+
+deriv          :: (Ord num, Num num) => Formula num -> Var -> Formula num
+deriv expr var =  d expr
   where d (Num _)  = Num 0
         d (Var fv) = Num (if var == fv then 1 else 0)
         d _         = getD (operator expr) var (leftOperand expr) (rightOperand expr)
-        getD Sum = add'
+        getD Sum  = add'
         getD Prod = mul'
         getD Exp  = hat'
 
+derivD          :: (Ord num, Num num) => Formula num -> Var -> Formula num
+derivD expr var =  d expr
+  where d (Num _)  = Num 0
+        d (Var fv) = Num (if var == fv then 1 else 0)
+        d _        = get (operator expr) Deriv var (leftOperand expr) (rightOperand expr)
+        get Sum  = sumM
+        get Prod = prodM
+        get Exp  = expM
+
 -- deriv (Bin Prod (Bin Prod (Var "x") (Var "y")) (Var "x")) "x"
+-- deriv (Bin Prod (Var "x") (Var "y")) (Var "x")) "x"
