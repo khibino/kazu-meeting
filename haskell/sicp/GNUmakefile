@@ -24,7 +24,10 @@ sources = \
 	Q2_63.hs \
 	Huffman.hs \
 	InsatiableE.hs \
-	Complex.hs
+	Complex.hs \
+	ComplexN.hs \
+	Poly.hs \
+	HoshiST.hs
 
 targets = $(sources:.hs=.o)
 
