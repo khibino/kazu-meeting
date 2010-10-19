@@ -27,7 +27,10 @@ sources = \
 	Complex.hs \
 	ComplexN.hs \
 	Poly.hs \
-	HoshiST.hs
+	HoshiST.hs \
+	Q3_01.hs \
+	Q3_02.hs \
+	Q3_05.hs
 
 targets = $(sources:.hs=.o)
 

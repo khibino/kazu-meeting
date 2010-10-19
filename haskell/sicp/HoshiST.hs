@@ -2,7 +2,7 @@
 module HoshiST where
 
 import Control.Monad.State
-import Control.Monad.State.Lazy
+--import Control.Monad.State.Lazy
 
 adder :: Int -> State Int ()
 adder i' = do i <- get
@@ -14,6 +14,9 @@ makeMonitor f x =
   do modify (+ 1)
      return $ f x
 
-makeAdder :: (MonadState s m, Num s) => Int -> a -> m b
+makeAdder :: Int -> State Int ()
 makeAdder i' = do modify (+ i')
                   return ()
+
+value :: State Int Int
+value  = get
