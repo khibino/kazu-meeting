@@ -32,7 +32,8 @@ sources = \
 	Q3_02.hs \
 	Q3_05.hs \
 	Sec3_3.hs \
-	Circuit.hs
+	Circuit.hs \
+	Circuit2.hs
 
 targets = $(sources:.hs=.o)
 

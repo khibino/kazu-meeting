@@ -26,7 +26,7 @@ adjustRange gen (min', max') n =
   n * ((max' - min') / fromIntegral (gmax - gmin)) + min'
 
 testR0 :: IO Double
-testR0 = fmap (\ gen -> adjustRange gen ((-1), 1) (-1000000000)) newStdGen
+testR0 = fmap (\ gen -> adjustRange gen (-1, 1) (-1000000000)) newStdGen
 
 adjustList                 :: StdGen -> (Double, Double) -> [Double] -> [Double]
 adjustList gen (min', max') = map (adjustRange gen (min', max'))
@@ -36,7 +36,7 @@ intRandoms gen = nv : intRandoms ngen
   where (nv, ngen) = next gen
 
 testL0 :: IO [Double]
-testL0  = fmap (\ gen -> adjustList gen ((-1), 1) $ take 20 (map fromIntegral (intRandoms gen))) newStdGen
+testL0  = fmap (\ gen -> adjustList gen (-1, 1) $ take 20 (map fromIntegral (intRandoms gen))) newStdGen
 
 divList             :: [a] -> ([a], [a])
 divList (x1':x2':xs) =

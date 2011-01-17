@@ -8,11 +8,6 @@ import Control.Arrow    as A
 
 newtype Auto i o = A (i -> (o, Auto i o))
 
-addAuto             :: Auto b Int -> Auto b Int -> Auto b Int
-addAuto (A f) (A g) =  A (\b -> let (x, f') = f b
-                                    (y, g') = g b
-                                in (x + y, addAuto f' g'))
-
 instance Category Auto where
   id        = A (\b -> (b, id))
   A g . A f = A (\b -> let (c, f') = f b
@@ -45,6 +40,7 @@ counter =  proc reset -> do
              id -< output
 
 instance ArrowCircuit Auto where
+--Auto i o= A  (i  -> (o, Auto i o))
   delay b = A (\b' -> (b, delay b'))
 
 runAuto :: Auto b c -> [b] -> [c]
@@ -74,10 +70,12 @@ toAuto =  arr
 nand :: Auto (Bool, Bool) Bool
 nand =  toAuto $ not . uncurry (&&)
 
-not' :: Auto Bool Bool
-not' =  proc input -> do
-          nand -< (input, input)
+off :: Auto Bool Bool
+off = delay False
 
+not' :: Auto Bool Bool
+not' =  proc input ->
+          off <<< off <<< nand -< (input, input)
 
 and'' :: Auto (Bool, Bool) Bool
 and'' =  nand >>> not' --not' . nand
@@ -85,20 +83,25 @@ and'' =  nand >>> not' --not' . nand
 and' :: Auto (Bool, Bool) Bool
 and' =  proc (i0, i1) -> do
           m0 <- nand -< (i0, i1)
+          off <<< not' -< m0
           not' -< m0
 
 or' :: Auto (Bool, Bool) Bool
 or' =  proc (i0, i1) -> do
          m0 <- not' -< i0
          m1 <- not' -< i1
+         off <<< off <<< off <<< nand -< (m0, m1)
          nand -< (m0, m1)
 
+nand' :: Auto (Bool, Bool) Bool
+nand' =  and' >>> not'
+
 xor' :: Auto (Bool, Bool) Bool
-xor' =  (nand &&& or') >>> and'
+xor' =  (nand' &&& or') >>> and'
 
 xor :: Auto (Bool, Bool) Bool
 xor =  proc i -> do
-         m0 <- nand -< i 
+         m0 <- nand' -< i 
          m1 <- or'  -< i
          and' -< (m0, m1)
 
@@ -111,6 +114,16 @@ hAdder =
     o0 <- xor  -< i
     o1 <- and' -< i
     id -< (o1, o0)
+
+
+hAdder'' :: Auto (Bool, Bool) (Bool, Bool)
+hAdder'' =
+  proc (a, b) -> do
+    d <- or'  -< (a, b)
+    c <- and' -< (a, b)
+    e <- not' -< c
+    s <- and' -< (d, e)
+    id -< (c, s)
 
 adder :: Auto ((Bool, Bool), Bool) (Bool, Bool)
 adder =  
