@@ -2,6 +2,7 @@
 
 module Circuit where
 
+import Data.List
 import Prelude hiding((.), id)
 import Control.Category as C
 import Control.Arrow    as A
@@ -67,41 +68,30 @@ toAuto =  arr
 -- or2 :: Auto (Bool, Bool) Bool
 -- or2 =  toAuto $ uncurry (||)
 
+--遅延なし
 nand :: Auto (Bool, Bool) Bool
 nand =  toAuto $ not . uncurry (&&)
 
-off :: Auto Bool Bool
-off = delay False
-
 not' :: Auto Bool Bool
 not' =  proc input ->
-          off <<< off <<< nand -< (input, input)
-
-and'' :: Auto (Bool, Bool) Bool
-and'' =  nand >>> not' --not' . nand
+          nand -< (input, input)
 
 and' :: Auto (Bool, Bool) Bool
+--and'' =  nand >>> not' --not' . nand
 and' =  proc (i0, i1) -> do
           m0 <- nand -< (i0, i1)
-          off <<< not' -< m0
           not' -< m0
 
 or' :: Auto (Bool, Bool) Bool
 or' =  proc (i0, i1) -> do
          m0 <- not' -< i0
          m1 <- not' -< i1
-         off <<< off <<< off <<< nand -< (m0, m1)
          nand -< (m0, m1)
 
-nand' :: Auto (Bool, Bool) Bool
-nand' =  and' >>> not'
-
-xor' :: Auto (Bool, Bool) Bool
-xor' =  (nand' &&& or') >>> and'
-
 xor :: Auto (Bool, Bool) Bool
+--xor =  (nand' &&& or') >>> and'
 xor =  proc i -> do
-         m0 <- nand' -< i 
+         m0 <- nand -< i 
          m1 <- or'  -< i
          and' -< (m0, m1)
 
@@ -109,21 +99,12 @@ hAdder' :: Auto (Bool, Bool) (Bool, Bool)
 hAdder' =  and' &&& xor
 
 hAdder :: Auto (Bool, Bool) (Bool, Bool)
+--hAdder =  and' &&& xor
 hAdder =  
   proc i -> do
     o0 <- xor  -< i
     o1 <- and' -< i
     id -< (o1, o0)
-
-
-hAdder'' :: Auto (Bool, Bool) (Bool, Bool)
-hAdder'' =
-  proc (a, b) -> do
-    d <- or'  -< (a, b)
-    c <- and' -< (a, b)
-    e <- not' -< c
-    s <- and' -< (d, e)
-    id -< (c, s)
 
 adder :: Auto ((Bool, Bool), Bool) (Bool, Bool)
 adder =  
@@ -133,6 +114,34 @@ adder =
     o1 <- or' -< (m1, m2)
     id -< (o1, o0)
 
+
+-- 遅延あり
+off :: Auto Bool Bool
+off = delay False
+
+not'' :: Auto Bool Bool
+not'' =  proc input ->
+           off <<< off <<< not' -< input
+
+and'' :: Auto (Bool, Bool) Bool
+and'' =  proc (i0, i1) ->
+          off <<< off <<< off <<< and' -< (i0, i1)
+
+or'' :: Auto (Bool, Bool) Bool
+or'' =  proc (i0, i1) ->
+          off <<< off <<< off <<< off <<< off <<< or' -< (i0, i1)
+
+hAdder'' :: Auto (Bool, Bool) (Bool, Bool)
+hAdder'' =
+  proc (a, b) -> do
+    d <- or''  -< (a, b)
+    c <- and'' -< (a, b)
+    e <- not'' -< c
+    s <- and'' -< (d, e)
+    id -< (s, c)
+
+
+-- Tools for test
 tuples2bit :: [(Bool, Bool)]
 tuples2bit =  let b = [False,True] in [(x,y) | x <- b, y <- b ]
 
@@ -144,3 +153,15 @@ tuples3bit =  let b = [False,True] in [((x,y), z) | x <- b, y <- b, z <- b ]
 
 test3bit  :: Auto ((Bool, Bool), Bool) c -> [c]
 test3bit c = runAuto c tuples3bit
+
+sicpInput :: [(Bool, Bool)]
+sicpInput =  replicate 8 (True, False) ++ replicate 10 (True, True)
+
+testSicp :: [(Bool, Bool)]
+testSicp =  runAuto hAdder'' sicpInput
+        
+testSicpPick :: IO ()
+testSicpPick =  putStr $ unlines [pick 8, pick 11, pick 16]
+  where probe n = (n, testSicp !! n)
+        pick  n = let m = n - 1 in show (probe m) ++ " --> " ++ show (probe n)
+
