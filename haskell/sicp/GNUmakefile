@@ -33,7 +33,10 @@ sources = \
 	Q3_05.hs \
 	Sec3_3.hs \
 	Circuit.hs \
-	Circuit2.hs
+	Circuit2.hs \
+	Constraint.hs \
+	santa.hs \
+
 
 targets = $(sources:.hs=.o)
 
