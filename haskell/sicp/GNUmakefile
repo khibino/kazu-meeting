@@ -36,6 +36,8 @@ sources = \
 	Circuit2.hs \
 	Constraint.hs \
 	santa.hs \
+	Stream.hs \
+	Q3.hs
 
 
 targets = $(sources:.hs=.o)
