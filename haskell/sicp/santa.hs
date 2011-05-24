@@ -101,6 +101,7 @@ santa elf_gp rein_gp =
          ; operateGate in_gate
          ; operateGate out_gate }
 
+{-# ANN choose "HLint: ignore" #-}
 choose :: [(STM a, a-> IO ())] -> IO ()
 choose choices = do { act <- atomically (foldr1 orElse actions)
                     ; act }
