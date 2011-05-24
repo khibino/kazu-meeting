@@ -18,7 +18,7 @@ monteCarloL expL = passed / try
 type PredType a = a -> a -> Bool
 
 predPi    :: PredType Double
-predPi x y = x^2 + y^2 <= 1.0
+predPi x y = x^(2 :: Int) + y^(2 :: Int) <= 1.0
 
 adjustRange                   :: StdGen -> (Double, Double) -> Double -> Double
 adjustRange gen (min', max') n =
