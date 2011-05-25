@@ -2,10 +2,13 @@
 
 module Circuit where
 
-import Data.List
 import Prelude hiding((.), id)
-import Control.Category as C
-import Control.Arrow    as A
+import Control.Category (Category(..))
+import Control.Arrow (Arrow(..),
+                      ArrowChoice(..),
+                      ArrowLoop(..),
+                      (>>>), (<<<),
+                      left)
 
 newtype Auto i o = A (i -> (o, Auto i o))
 
@@ -41,17 +44,11 @@ counter =  proc reset -> do
              id -< output
 
 instance ArrowCircuit Auto where
---Auto i o= A  (i  -> (o, Auto i o))
   delay b = A (\b' -> (b, delay b'))
 
 runAuto :: Auto b c -> [b] -> [c]
 runAuto (A _) []     = []
 runAuto (A f) (b:bs) = let (c, f') = f b in (c: runAuto f' bs)
-
---not' :: ArrowCircuit a => a Bool Bool
---not' =  arr not
-
---nand :: ArrowCircuit a => a (Bool, Bool) Bool
 
 toAuto :: (i -> o) -> Auto i o
 toAuto =  arr
