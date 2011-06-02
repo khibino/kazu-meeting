@@ -9,7 +9,8 @@ sources = \
 	Syntax.hs \
 	Evaluator.hs \
 	TestEval.hs \
-##	SExp.hs \
+	SExpSyntax.hs \
+	SExpParser.hs
 
 
 targets = $(sources:.hs=.o)
