@@ -1,5 +1,8 @@
 
-module Syntax where
+module Syntax (
+  Pat(..), Literal(..),
+  Lambda(..), Exp(..), Bind(..),
+  Module, Program(..)) where
 
 import SExpSyntax (SExp, SExp'(..))
 
