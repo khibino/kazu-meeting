@@ -8,14 +8,6 @@ data Atom n = Num n
 readNum' :: (Num n, Read n) => String -> Atom n
 readNum' =  Num . read
 
-readAtom :: (Num n, Read n) => String -> Atom n
-readAtom xxs@(x:_) =
-  case x of
-    '"'  -> Str (read xxs :: String)
-    _ | x `elem` ['0'..'9'] -> Num (read xxs)
-    _    -> Id xxs
-readAtom [] = error "Nul string input"
-
 showAtom :: (Num n, Read n, Show n) => Atom n -> String
 showAtom = f
   where f (Num n) = tag "num" $ show n
