@@ -1,5 +1,5 @@
 module SExpSyntax (
-  SExp,
+  SExp, SExp'(..),
   list,
   string, symbol,
   SNum,
@@ -10,6 +10,7 @@ module SExpSyntax (
 data Atom n = Num n
             | Str String
             | Id String
+            deriving Eq
             --deriving Show
 
 showAtom :: (Num n, Show n) => Atom n -> String
@@ -25,7 +26,7 @@ instance (Show n, Num n) => Show (Atom n) where
 data SExp' a = Atom a
              | Nil
              | (SExp' a) :! (SExp' a)
-             deriving Show
+             deriving (Show, Eq)
 
 infixr 5 :!
 

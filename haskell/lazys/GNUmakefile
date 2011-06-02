@@ -6,11 +6,12 @@ HC = ghc
 HFLAGS = -Wall
 
 sources = \
+	SExpSyntax.hs \
+	SExpParser.hs \
 	Syntax.hs \
 	Evaluator.hs \
 	TestEval.hs \
-	SExpSyntax.hs \
-	SExpParser.hs
+
 
 
 targets = $(sources:.hs=.o)
