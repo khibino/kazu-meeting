@@ -67,12 +67,20 @@ rParen = char ')'
 
 lParen, rParen :: ReadP Char
 
+quote =  char '\''
+dQuote = char '"'
+bslash = char '\\'
+
+quote, dQuote, bslash :: ReadP Char
+
+
 list =  between lParen rParen exprList
 exprList = many expr
 
 list, exprList :: ReadP [SExp]
 
-expr = trim $ (Syntax.list <$> list) +++ atom
+expr = trim ((Syntax.list <$> list) +++ atom ) +++
+       (skipSpaces *> (Syntax.quote <$> (quote *> expr)))
 
 atom = num +++ string' +++ symbol
 
@@ -84,15 +92,11 @@ escapeStrCharsP =  (`elem` ['"', '\\'])
 
 string' = between dQuote dQuote $ Syntax.string <$> many strChar
 
+strChar :: ReadP Char
 strChar =  normal +++ escaped
   where
     normal  = satisfy (not . escapeStrCharsP)
     escaped = bslash *> get
-
-dQuote = char '"'
-bslash = char '\\'
-
-strChar, dQuote, bslash :: ReadP Char
 
 
 escapeSymbolCharP :: Char -> Bool
@@ -103,9 +107,6 @@ tokenSep =  skipSpaces1 +++
             peek (lParen +++ rParen +++
                   dQuote +++ quote) +++
             peek eof
-
-quote :: ReadP Char
-quote =  char '\''
 
 symbol = Syntax.symbol <$> many1 symbolChar <* tokenSep
 
