@@ -1,8 +1,10 @@
 module TestEval where
 
 import Syntax
-import Evaluator (evalExp)
+import Evaluator (evalExp, Result)
 
-exp0  = Let [BPat (PVar "x") (Lit (Num 1))] (EVar "x")
+exp0 :: Exp Integer
+exp0 =  Let [BPat (PVar "x") (Lit (Num 1))] (EVar "x")
 
-test0 = evalExp exp0
+test0 :: Result Integer
+test0 =  evalExp exp0
