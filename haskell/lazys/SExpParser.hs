@@ -5,13 +5,13 @@ import Prelude hiding (concat)
 import SExpSyntax (SExp)
 import qualified SExpSyntax as Syntax
 
-import Data.Char (toUpper)
+import Data.Char (toUpper, isSpace)
 import Text.ParserCombinators.ReadP
-  (ReadP, readP_to_S,
-   (+++), satisfy,
+  (ReadP, readP_to_S, readS_to_P,
+   (+++), satisfy, eof,
    get, char, string,
    skipSpaces, between, choice,
-   sepBy, many1, many)
+   skipMany1, many1, many)
 import Control.Monad (ap)
 import Control.Applicative (Applicative(..),
                             (<$>), (<*>), (*>))
@@ -48,23 +48,30 @@ prefix s = (string s <++>)
 concat :: [ReadP [a]] -> ReadP [a]
 concat =  foldr (<++>) empty
 
-spaceCharsP :: Char -> Bool
-spaceCharsP =  (`elem` " \t\r\n")
+peek :: ReadP a -> ReadP ()
+peek p = readS_to_P readS
+  where readS input =
+          case readP_to_S p input of
+            _:_ -> [((), input)]
+            []  -> []
+
+skipSpaces1 :: ReadP ()
+skipSpaces1 =  skipMany1 $ satisfy isSpace
 
 trim :: ReadP a -> ReadP a
 trim p = skipSpaces *> p <* skipSpaces
 
-lParen = trim $ char '('
-rParen = trim $ char ')'
+lParen = char '('
+rParen = char ')'
 
 lParen, rParen :: ReadP Char
 
 list =  between lParen rParen exprList
-exprList = sepBy expr skipSpaces
+exprList = many expr
 
 list, exprList :: (Num n, Read n) => ReadP [SExp n]
 
-expr = (Syntax.list <$> list) +++ atom
+expr = trim $ (Syntax.list <$> list) +++ atom
 
 atom = num +++ string' +++ symbol
 
@@ -74,23 +81,32 @@ expr, atom :: (Num n, Read n) => ReadP (SExp n)
 escapeStrCharsP :: Char -> Bool
 escapeStrCharsP =  (`elem` ['"', '\\'])
 
-string' = between dquote dquote $ Syntax.string <$> many strChar
+string' = between dQuote dQuote $ Syntax.string <$> many strChar
 
 strChar =  normal +++ escaped
   where
     normal  = satisfy (not . escapeStrCharsP)
     escaped = bslash *> get
 
-dquote = char '"'
+dQuote = char '"'
 bslash = char '\\'
 
-strChar, dquote, bslash :: ReadP Char
+strChar, dQuote, bslash :: ReadP Char
 
 
 escapeSymbolCharP :: Char -> Bool
-escapeSymbolCharP =  (`elem` "()\"' \t\r\n")
+escapeSymbolCharP =  (`elem` (['0'..'9'] ++ "()#\"' \t\r\n"))
 
-symbol = Syntax.symbol <$> many1 symbolChar
+tokenSep :: ReadP ()
+tokenSep =  skipSpaces1 +++
+            peek (lParen +++ rParen +++
+                  dQuote +++ quote) +++
+            peek eof
+
+quote :: ReadP Char
+quote =  char '\''
+
+symbol = Syntax.symbol <$> many1 symbolChar <* tokenSep
 
 symbolChar :: ReadP Char
 symbolChar =  normal +++ escaped
@@ -100,7 +116,7 @@ symbolChar =  normal +++ escaped
 string', symbol :: (Num n, Read n) => ReadP (SExp n)
 
 num :: (Num n, Read n) => ReadP (SExp n)
-num =  float +++ int
+num =  (float +++ int) <* tokenSep
 
 float :: (Num n, Read n) => ReadP (SExp n)
 float =  Syntax.readNum <$> (floatNormal +++
@@ -148,7 +164,7 @@ parseExpr :: (Num n, Read n) => ReadS (SExp n)
 parseExpr = readP_to_S expr
 
 parseExprList :: (Num n, Read n) => ReadS [SExp n]
-parseExprList = readP_to_S exprList
+parseExprList = readP_to_S (exprList <* eof)
 
 --
 -- end of SExpParser.hs
