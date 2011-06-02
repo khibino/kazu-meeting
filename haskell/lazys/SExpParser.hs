@@ -10,6 +10,7 @@ import Text.ParserCombinators.ReadP
   (ReadP, readP_to_S, readS_to_P,
    (+++), satisfy, eof,
    get, char, string,
+   optional,
    skipSpaces, between, choice,
    skipMany1, many1, many)
 import Control.Monad (ap)
@@ -69,13 +70,13 @@ lParen, rParen :: ReadP Char
 list =  between lParen rParen exprList
 exprList = many expr
 
-list, exprList :: (Num n, Read n) => ReadP [SExp n]
+list, exprList :: ReadP [SExp]
 
 expr = trim $ (Syntax.list <$> list) +++ atom
 
 atom = num +++ string' +++ symbol
 
-expr, atom :: (Num n, Read n) => ReadP (SExp n)
+expr, atom :: ReadP SExp
 
 {-# ANN escapeStrCharsP "HLint: ignore" #-}
 escapeStrCharsP :: Char -> Bool
@@ -113,15 +114,14 @@ symbolChar =  normal +++ escaped
   where normal = satisfy (not . escapeSymbolCharP)
         escaped = bslash *> (toUpper <$> get)
 
-string', symbol :: (Num n, Read n) => ReadP (SExp n)
+string', symbol :: ReadP SExp
 
-num :: (Num n, Read n) => ReadP (SExp n)
+num :: ReadP SExp
 num =  (float +++ int) <* tokenSep
 
-float :: (Num n, Read n) => ReadP (SExp n)
-float =  Syntax.readNum <$> (floatNormal +++
-                             floatDotFirst +++
-                             floatDotLast)
+float :: ReadP SExp
+float =  Syntax.readDouble <$> (floatNormal +++
+                                floatDotFirst)
 
 floatNormal   = decimal <++> dot <:> decimal
 floatDotFirst = concat [empty, insertZeroS, dot <:> decimal]
@@ -138,10 +138,10 @@ dotS = dot <:> empty
 insertZero, dot :: ReadP Char
 insertZeroS, dotS :: ReadP String
 
-int :: (Num n, Read n) => ReadP (SExp n)
-int =  Syntax.readNum <$> (decimal +++
-                           octal +++
-                           hexadecimal)
+int :: ReadP SExp
+int =  Syntax.readInteger <$> ((decimal <* optional dot) +++
+                               octal +++
+                               hexadecimal)
 
 decimal = many1 digit
 octal       = (sharp *> insertZero) <:> choiceC "oO" <:> many1 octit
@@ -157,14 +157,20 @@ hexit = digit +++ choiceC "abcdefABCDEF"
         
 sharp, digit, octit, hexit :: ReadP Char
 
-parseAtom :: (Num n, Read n) => ReadS (SExp n)
-parseAtom = readP_to_S atom
+parseFloat :: ReadS SExp
+parseFloat =  readP_to_S float
 
-parseExpr :: (Num n, Read n) => ReadS (SExp n)
-parseExpr = readP_to_S expr
+parseAtom :: ReadS SExp
+parseAtom =  readP_to_S atom
 
-parseExprList :: (Num n, Read n) => ReadS [SExp n]
-parseExprList = readP_to_S (exprList <* eof)
+parseExpr :: ReadS SExp
+parseExpr =  readP_to_S expr
+
+parseExprList :: ReadS [SExp]
+parseExprList =  readP_to_S (exprList <* eof)
+
+test0 :: [(SExp, String)]
+test0 =  parseExpr "(let ((x 1)) x)"
 
 --
 -- end of SExpParser.hs

@@ -1,21 +1,25 @@
-module SExpSyntax where
+module SExpSyntax (
+  SExp,
+  list,
+  string, symbol,
+  SNum,
+  integer, double,
+  readInteger, readDouble,
+  quote) where
 
 data Atom n = Num n
             | Str String
             | Id String
             --deriving Show
 
-readNum' :: (Num n, Read n) => String -> Atom n
-readNum' =  Num . read
-
-showAtom :: (Num n, Read n, Show n) => Atom n -> String
+showAtom :: (Num n, Show n) => Atom n -> String
 showAtom = f
   where f (Num n) = tag "num" $ show n
         f (Str str) = show str
         f (Id s)  = tag "symbol" s
         tag n s = '<':n ++  ':':s ++ ">"
 
-instance (Show n, Read n, Num n) => Show (Atom n) where
+instance (Show n, Num n) => Show (Atom n) where
   show = showAtom
 
 data SExp' a = Atom a
@@ -28,19 +32,75 @@ infixr 5 :!
 list :: [SExp' a] -> SExp' a
 list = foldr (:!) Nil
 
-type SExp n = SExp' (Atom n)
+data SNum = I Integer
+          | F Double
+            
+instance Eq SNum where
+  I a == I b = a == b
+  F a == F b = a == b
+  I a == b   = F (fromIntegral a) == b
+  a   == I b = a == F (fromIntegral b)
+  
+instance Show SNum where
+  show (I a) = show a
+  show (F a) = show a
 
-readNum :: (Num n, Read n) => String -> SExp n
-readNum =  Atom . readNum'
 
-string :: (Num n, Read n) => String -> SExp n
+type Op2 a b = a -> a -> b
+type IntegerOp2 = Op2 Integer Integer
+type DoubleOp2  = Op2 Double  Double
+
+type UniOp a = a -> a
+type IntegerUni = UniOp Integer
+type DoubleUni  = UniOp Double
+
+upcastOp2 :: IntegerOp2 -> DoubleOp2 -> SNum -> SNum -> SNum
+upcastOp2 iOp dOp = f
+  where f (I a) (I b) = I (iOp a b)
+        f (F a) (F b) = F $ dOp a b
+        f (I a) b     = f (F (fromIntegral a)) b
+        f a     (I b) = f a (F (fromIntegral b))
+
+uniOp :: IntegerUni -> DoubleUni -> SNum -> SNum
+uniOp iOp dOp = f
+  where f (I n) = I (iOp n)
+        f (F n) = F (dOp n)
+
+instance Num SNum where
+  (+) = upcastOp2 (+) (+)
+  (*) = upcastOp2 (*) (*)
+  (-) = upcastOp2 (-) (-)
+  negate = uniOp negate negate
+  abs    = uniOp abs abs
+  signum = uniOp signum signum
+  fromInteger = I
+
+num :: a -> SExp' (Atom a)
+num = Atom . Num
+
+type SExp = SExp' (Atom SNum)
+
+
+integer :: Integer -> SExp
+integer = num . I
+
+double :: Double -> SExp
+double  = num . F
+
+readInteger :: String -> SExp
+readInteger =  integer . (read :: String -> Integer)
+
+readDouble :: String -> SExp
+readDouble =  double . (read :: String -> Double)
+
+string :: String -> SExp
 string =  Atom . Str
 
-symbol :: (Num n, Read n) => String -> SExp n
+symbol :: String -> SExp
 symbol =  Atom . Id
 
-quoteId :: SExp n
+quoteId :: SExp
 quoteId =  Atom (Id "quote")
 
-quote :: SExp n -> SExp n
+quote :: SExp -> SExp
 quote = (quoteId :!) . (:! Nil)
