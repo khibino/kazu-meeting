@@ -2,11 +2,13 @@
 module Syntax (
   Pat(..), Literal(..),
   Lambda(..), Exp(..), Bind(..),
-  Module, Program(..)) where
+  Module(..), Program(..)) where
 
-import SExpSyntax (SExp, SExp'(..))
+--import SExpSyntax (SExp, SExp'(..))
+import SExpSyntax (SExp)
 
 type Var = String
+type Mod = String
 
 data Pat = PVar { runPVar :: Var }
 --         |
@@ -37,9 +39,10 @@ data Bind n = BPat Pat (Exp n)
             | BFun Var (Lambda n)
             deriving (Eq, Show)
 
-type Module n = [Bind n]
+data Module n = Module { name :: Mod
+                       , binds :: [Bind n]
+                       }
+              deriving (Eq, Show)
 
-data Program n = Program { entry   ::  Bind n
-                         , modules :: [Module n]
-                         }
+data Program n = Program { modules :: [Module n] }
                deriving (Eq, Show)
