@@ -7,12 +7,6 @@ import qualified Syntax as S
 mainNotFound :: a
 mainNotFound =  error "main definition not found."
 
-simpleProgram :: S.Module n -> S.Program n
-simpleProgram m =
-  maybe mainNotFound
-  (const S.Program { S.modules = [m]}) -- (S.Program [m])
-  $ find undefined (S.binds m)
-
 type Var = String
 type Mod = String
 
@@ -50,7 +44,7 @@ data Bind n = Bind { bindKey   :: Var
 type Env n = [Bind n]
 
 
-evalError :: String -> String -> a 
+evalError :: String -> String -> a
 evalError s = error . (s ++) . (": " ++)
 
 
@@ -63,10 +57,13 @@ bind =  uncurry Bind
 extendEnv1 :: (Var, Result n) -> Env n -> Env n
 extendEnv1 =  (:) . bind
 
-extendEnv :: Maybe Mod -> Env n -> [(Var, Result n)] -> Env n
-extendEnv qual env pairs = local
-  where exQual q = foldr ((:) . bindQualified q) env pairs
-        local = foldr extendEnv1 (maybe env exQual qual) pairs
+extendEnv :: Env n -> [(Var, Result n)] -> Env n
+extendEnv =  foldr extendEnv1
+
+extendEnvTop :: Mod -> Env n -> [(Var, Result n)] -> (Env n, Env n)
+extendEnvTop qual env pairs = (local, global)
+  where global = foldr ((:) . bindQualified qual) env pairs
+        local = foldr extendEnv1 global pairs
 
 patternMatch :: S.Pat -> Result n -> [(Var, Result n)]
 patternMatch pat value = dispatch pat
@@ -74,20 +71,26 @@ patternMatch pat value = dispatch pat
 
 paramsMatch :: [S.Pat] -> [Result n] -> Env n -> Env n
 paramsMatch pats values env =
-  extendEnv Nothing env
+  extendEnv env
   $ concatMap (uncurry patternMatch) (zip pats values)
 
 closure :: S.Lambda n -> Env n -> Result n
 closure lambda env = Closure { closureCode = lambda, closureVarArgs = [], closureEnv = env }
 
-recEnv :: Maybe Mod -> Env n -> [S.Bind n] -> Env n
-recEnv qual env binds = recEnv'
-  where recEnv' = extendEnv qual env $ concatMap match binds
-        match (S.BPat pat expr')  = patternMatch pat (evalExp' recEnv' expr')
-        match (S.BFun var lambda) = [(var, closure lambda recEnv')]
+bindMatch :: Env n -> S.Bind n -> [(Var, Result n)]
+bindMatch env = match
+  where match (S.BPat pat expr')  = patternMatch pat (evalExp' env expr')
+        match (S.BFun var lambda) = [(var, closure lambda env)]
 
 letEnv :: Env n -> [S.Bind n] -> Env n
-letEnv =  recEnv Nothing
+letEnv env binds = recEnv'
+  where recEnv' = extendEnv env $ concatMap match binds
+        match = bindMatch recEnv'
+
+topEnv :: Mod -> Env n -> [S.Bind n] -> (Env n, Env n)
+topEnv qual env binds = envPair
+  where envPair@(recEnv', _) = extendEnvTop qual env $ concatMap match binds
+        match = bindMatch recEnv'
 
 applyError :: String -> a
 applyError =  evalError "apply"
@@ -155,3 +158,10 @@ evalExp' env = eval
 
 evalExp :: S.Exp n -> Result n
 evalExp =  evalExp' []
+
+qualifiedImport :: Env n -> S.Module n -> Env n
+qualifiedImport env mod' =
+  snd $ topEnv (S.name mod') env (S.binds mod')
+
+run :: Env n -> S.Module n -> Result n
+run env mod' =  evalExp' (qualifiedImport env mod') (S.EVar "Main.main")

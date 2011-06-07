@@ -2,7 +2,9 @@
 module Syntax (
   Pat(..), Literal(..),
   Lambda(..), Exp(..), Bind(..),
-  Module(..), Program(..)) where
+  Module(..),
+  --Program(..), simpleProgram
+  ) where
 
 --import SExpSyntax (SExp, SExp'(..))
 import SExpSyntax (SExp)
@@ -44,5 +46,8 @@ data Module n = Module { name :: Mod
                        }
               deriving (Eq, Show)
 
-data Program n = Program { modules :: [Module n] }
-               deriving (Eq, Show)
+--data Program n = Program { modules :: [Module n] }
+--               deriving (Eq, Show)
+
+--simpleProgram :: Module n -> Program n
+--simpleProgram =  Program . (:[])
