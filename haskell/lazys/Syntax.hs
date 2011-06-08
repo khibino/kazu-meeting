@@ -1,7 +1,12 @@
 
 module Syntax (
   Pat(..), Literal(..),
-  Lambda(..), Exp(..), Bind(..),
+  Lambda(..),
+  
+  Exp(..),
+  number, string,
+  
+  Bind(..),
   Module(..),
   --Program(..), simpleProgram
   ) where
@@ -36,6 +41,12 @@ data Exp n = Lit (Literal n)
            | Abs (Lambda n)
            | Let [Bind n] (Exp n)
            deriving (Eq, Show)
+
+number :: n -> Exp n
+number =  Lit . Num
+
+string :: String -> Exp n
+string =  Lit . Str
 
 data Bind n = BPat Pat (Exp n)
             | BFun Var (Lambda n)
