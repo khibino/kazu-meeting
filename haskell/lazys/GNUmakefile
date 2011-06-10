@@ -6,6 +6,7 @@ HC = ghc
 HFLAGS = -Wall
 
 sources = \
+	PrimNum.hs \
 	SExpSyntax.hs \
 	SExpParser.hs \
 	Syntax.hs \

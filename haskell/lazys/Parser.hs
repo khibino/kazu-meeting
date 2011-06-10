@@ -3,7 +3,10 @@ module Parser (
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad.Instances ()
-import SExpSyntax (SExp' (..), SExp, SNum(..))
+
+import PrimNum (PNum)
+
+import SExpSyntax (SExp' (..), SExp)
 import qualified SExpSyntax as SExp (Atom(..), toList, toList1)
 
 import Syntax (Var, Pat(..), lambda, number, string, quote)
@@ -20,11 +23,11 @@ successResult :: exp -> ParseResult exp
 successResult =  return
 
 
-type Literal = Syntax.Literal SNum
-type Lambda  = Syntax.Lambda SNum
-type Exp     = Syntax.Exp SNum
-type Bind    = Syntax.Bind SNum
-type Module  = Syntax.Module SNum
+type Literal = Syntax.Literal PNum
+type Lambda  = Syntax.Lambda PNum
+type Exp     = Syntax.Exp PNum
+type Bind    = Syntax.Bind PNum
+type Module  = Syntax.Module PNum
 
 toPat :: SExp -> ParseResult Pat
 toPat =  match
