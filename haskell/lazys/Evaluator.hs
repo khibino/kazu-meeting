@@ -2,7 +2,7 @@
 module Evaluator where
 
 import Data.List (find)
-import qualified Syntax as S
+import qualified Syntax
 
 mainNotFound :: a
 mainNotFound =  error "main definition not found."
@@ -24,7 +24,7 @@ data Value n = Lit (Literal n)
 
 data Result n = Value (Value n)
               | IO (IO (Value n))
-              | Closure { closureCode    :: S.Lambda n
+              | Closure { closureCode    :: Syntax.Lambda' n
                         , closureVarArgs :: [Result n]
                         , closureEnv     :: Env n
                         }
@@ -65,29 +65,29 @@ extendEnvTop qual env pairs = (local, global)
   where global = foldr ((:) . bindQualified qual) env pairs
         local = foldr extendEnv1 global pairs
 
-patternMatch :: S.Pat -> Result n -> [(Var, Result n)]
+patternMatch :: Syntax.Pat -> Result n -> [(Var, Result n)]
 patternMatch pat value = dispatch pat
-  where dispatch (S.PVar var) = [(var, value)]
+  where dispatch (Syntax.PVar var) = [(var, value)]
 
-paramsMatch :: [S.Pat] -> [Result n] -> Env n -> Env n
+paramsMatch :: [Syntax.Pat] -> [Result n] -> Env n -> Env n
 paramsMatch pats values env =
   extendEnv env
   $ concatMap (uncurry patternMatch) (zip pats values)
 
-closure :: S.Lambda n -> Env n -> Result n
+closure :: Syntax.Lambda' n -> Env n -> Result n
 closure lambda env = Closure { closureCode = lambda, closureVarArgs = [], closureEnv = env }
 
-bindMatch :: Env n -> S.Bind n -> [(Var, Result n)]
+bindMatch :: Env n -> Syntax.Bind' n -> [(Var, Result n)]
 bindMatch env = match
-  where match (S.BPat pat expr')  = patternMatch pat (evalExp' env expr')
-        match (S.BFun var lambda) = [(var, closure lambda env)]
+  where match (Syntax.BPat pat expr')  = patternMatch pat (evalExp' env expr')
+        match (Syntax.BFun var lambda) = [(var, closure lambda env)]
 
-letEnv :: Env n -> [S.Bind n] -> Env n
+letEnv :: Env n -> [Syntax.Bind' n] -> Env n
 letEnv env binds = recEnv'
   where recEnv' = extendEnv env $ concatMap match binds
         match = bindMatch recEnv'
 
-topEnv :: Mod -> Env n -> [S.Bind n] -> (Env n, Env n)
+topEnv :: Mod -> Env n -> [Syntax.Bind' n] -> (Env n, Env n)
 topEnv qual env binds = envPair
   where envPair@(recEnv', _) = extendEnvTop qual env $ concatMap match binds
         match = bindMatch recEnv'
@@ -104,64 +104,64 @@ apply (Closure lambda _ env) args =
   if   restLen > 0 then partial
   else full
     where argsLen = length args
-          params = S.params lambda
-          paramsLen = S.paramsLen lambda
+          params = Syntax.params lambda
+          paramsLen = Syntax.paramsLen lambda
           restLen = paramsLen - argsLen
 
           partial =
             let (toBind, rest) = splitAt argsLen params
                 env' = paramsMatch toBind args env in
-            Closure (lambda { S.params = rest, S.paramsLen = restLen }) [] env'
+            Closure (lambda { Syntax.params = rest, Syntax.paramsLen = restLen }) [] env'
 
           full =
             let (toBind, rest) = splitAt paramsLen args
                 env' = paramsMatch params toBind env in
-            case S.varParam lambda of
-              Just _  -> Closure (lambda { S.params = [], S.paramsLen = 0 }) rest env'
-              Nothing -> apply (evalExp' env' $ S.body lambda) rest
+            case Syntax.varParam lambda of
+              Just _  -> Closure (lambda { Syntax.params = [], Syntax.paramsLen = 0 }) rest env'
+              Nothing -> apply (evalExp' env' $ Syntax.body lambda) rest
 apply _ _ = applyError "not function type"
 
-isFilled :: S.Lambda n -> Bool
-isFilled lambda | S.params lambda == [] && S.paramsLen lambda == 0 = True
-                | S.params lambda == []   = error "Inconsistent param."
-                | S.paramsLen lambda == 0 = error "Inconsistent param."
+isFilled :: Syntax.Lambda' n -> Bool
+isFilled lambda | Syntax.params lambda == [] && Syntax.paramsLen lambda == 0 = True
+                | Syntax.params lambda == []   = error "Inconsistent param."
+                | Syntax.paramsLen lambda == 0 = error "Inconsistent param."
                 | otherwise = False
 
 -- 可変引数関数の呼び出し
 vcall :: Result n -> Result n
 vcall (Closure lambda varArgs env)
-  | Just var <- S.varParam lambda, isFilled lambda =
-    evalExp' (Bind var (list varArgs) : env) (S.body lambda)
+  | Just var <- Syntax.varParam lambda, isFilled lambda =
+    evalExp' (Bind var (list varArgs) : env) (Syntax.body lambda)
   | otherwise = error "Not variable param or not filled param closure is passed vcall!"
 vcall _ =  error "Not closure is passwd vcall!"
 
 
-evalLit :: S.Literal n -> Literal n
+evalLit :: Syntax.Literal' n -> Literal n
 evalLit =  f
-  where f (S.Num n) = Num n
-        f (S.Str s) = Str s
-        f (S.Quote _) = undefined
+  where f (Syntax.Num n) = Num n
+        f (Syntax.Str s) = Str s
+        f (Syntax.Quote _) = undefined
 
           
-evalExp' :: Env n -> S.Exp n -> Result n
+evalExp' :: Env n -> Syntax.Exp' n -> Result n
 evalExp' env = eval
-  where eval (S.Lit lit)  = Value $ Lit $ evalLit lit
-        eval (S.EVar var) =
+  where eval (Syntax.Lit lit)  = Value $ Lit $ evalLit lit
+        eval (Syntax.EVar var) =
           maybe (unboundVariable var) bindValue
           $ find ((var ==) . bindKey) env
-        eval (S.FApp fun args) =
+        eval (Syntax.FApp fun args) =
           apply (eval fun) (map eval args)
-        eval (S.VCall clo) =
+        eval (Syntax.VCall clo) =
           vcall $ eval clo
-        eval (S.Abs lambda) = closure lambda env
-        eval (S.Let binds expr) = evalExp' (letEnv env binds) expr
+        eval (Syntax.Abs lambda) = closure lambda env
+        eval (Syntax.Let binds expr) = evalExp' (letEnv env binds) expr
 
-evalExp :: S.Exp n -> Result n
+evalExp :: Syntax.Exp' n -> Result n
 evalExp =  evalExp' []
 
-qualifiedImport :: Env n -> S.Module n -> Env n
+qualifiedImport :: Env n -> Syntax.Module' n -> Env n
 qualifiedImport env mod' =
-  snd $ topEnv (S.name mod') env (S.binds mod')
+  snd $ topEnv (Syntax.name mod') env (Syntax.binds mod')
 
-run :: Env n -> S.Module n -> Result n
-run env mod' =  evalExp' (qualifiedImport env mod') (S.EVar "Main.main")
+run :: Env n -> Syntax.Module' n -> Result n
+run env mod' =  evalExp' (qualifiedImport env mod') (Syntax.EVar "Main.main")
