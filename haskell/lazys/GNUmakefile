@@ -9,6 +9,7 @@ sources = \
 	SExpSyntax.hs \
 	SExpParser.hs \
 	Syntax.hs \
+	Parser.hs \
 	Evaluator.hs \
 	TestEval.hs \
 

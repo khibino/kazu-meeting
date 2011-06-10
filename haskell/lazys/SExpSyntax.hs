@@ -2,10 +2,17 @@ module SExpSyntax (
   Atom(..), SExp'(..), SExp,
   list,
   string, symbol,
-  SNum,
+
+  SNum(..),
   integer, double,
   readInteger, readDouble,
-  quote) where
+  quote,
+
+  ParseResult,
+  toList, toList1) where
+
+import Control.Arrow (first)
+import Control.Monad.Instances ()
 
 data Atom n = Num n
             | Str String
@@ -105,3 +112,17 @@ quoteId =  Atom (Id "quote")
 
 quote :: SExp -> SExp
 quote = (quoteId :!) . (:! Nil)
+
+type ParseResult exp = Either String exp
+
+toList1 :: SExp -> ([SExp], Maybe SExp)
+toList1 = rec
+  where rec (e:!es)       = first (e :) (rec es)
+        rec Nil           = ([], Nothing)
+        rec atom@(Atom _) = ([], Just atom)
+
+toList :: SExp -> ParseResult [SExp]
+toList exp' = 
+  case toList1 exp' of
+    (expL, Nothing) -> Right expL
+    (   _, Just _)  -> Left  ("Not proper list: " ++ show exp')

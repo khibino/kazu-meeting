@@ -1,10 +1,12 @@
 
 module Syntax (
+  Var, Mod,
+  
   Pat(..), Literal(..),
-  Lambda(..),
+  Lambda(..), lambda,
   
   Exp(..),
-  number, string,
+  number, string, quote,
   
   Bind(..),
   Module(..),
@@ -32,7 +34,10 @@ data Lambda n = Lambda { params :: [Pat]
                        , body :: Exp n
                        }
               deriving (Eq, Show)
-              
+
+lambda :: [Pat] -> Maybe Var -> Exp n -> Lambda n
+lambda params' =
+  Lambda params' (length params')
 
 data Exp n = Lit (Literal n)
            | EVar Var
@@ -47,6 +52,9 @@ number =  Lit . Num
 
 string :: String -> Exp n
 string =  Lit . Str
+
+quote :: SExp -> Exp n
+quote =  Lit . Quote
 
 data Bind n = BPat Pat (Exp n)
             | BFun Var (Lambda n)
