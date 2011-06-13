@@ -9,7 +9,7 @@ import Data.Char (toUpper, isSpace)
 import Text.ParserCombinators.ReadP
   (ReadP, readP_to_S, readS_to_P,
    (+++), satisfy, eof,
-   get, char, string,
+   get, char,
    optional,
    skipSpaces, between, choice,
    skipMany1, many1, many)
@@ -40,11 +40,6 @@ append a b = (++) <$> a <*> b
 append, (<++>) :: ReadP [a] -> ReadP [a] -> ReadP [a]
 
 infixr 5 <++>
-
-preC :: Char -> ReadP String -> ReadP String
-preC   c = (char c <:>)
-prefix :: String -> ReadP String -> ReadP String
-prefix s = (string s <++>)
 
 concat :: [ReadP [a]] -> ReadP [a]
 concat =  foldr (<++>) empty
