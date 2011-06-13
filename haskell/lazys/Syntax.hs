@@ -25,7 +25,7 @@ data Pat = PVar { runPVar :: Var }
 
 data Literal' n = Num n
                 | Str String
-                | Quote SExp
+                | SExp SExp
                 deriving (Eq, Show)
 
 data Lambda' n = Lambda { params :: [Pat]
@@ -54,7 +54,7 @@ string :: String -> Exp' n
 string =  Lit . Str
 
 quote :: SExp -> Exp' n
-quote =  Lit . Quote
+quote =  Lit . SExp
 
 data Bind' n = BPat Pat (Exp' n)
              | BFun Var (Lambda' n)

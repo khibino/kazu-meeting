@@ -73,6 +73,7 @@ toExpr =  rec
                                                    <$> many toBind binds'
                                                    <*> rec expr
           | otherwise                     = parseError "let" form
+        rec (SExp.Atom (SExp.Id "quote") :! rest) = successResult $ quote rest
         rec (SExp.Atom (SExp.Id sym) :! rest)
           | sym `elem` ["lambda", "\\"] = Syntax.Abs <$> toLambda rest
         rec form@(proc :! SExp.Nil) | SExp.functionValue proc = Syntax.VCall <$> rec proc
