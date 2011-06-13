@@ -140,7 +140,7 @@ evalLit :: Syntax.Literal' n -> Literal n
 evalLit =  f
   where f (Syntax.Num n) = Num n
         f (Syntax.Str s) = Str s
-        f (Syntax.Quote _) = undefined
+        f (Syntax.SExp _) = undefined
 
           
 evalExp' :: Env n -> Syntax.Exp' n -> Result n
