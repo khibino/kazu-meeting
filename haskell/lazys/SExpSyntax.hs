@@ -3,10 +3,11 @@ module SExpSyntax (
   list,
   string, symbol,
 
-  --SNum(..),
   integer, double,
   readInteger, readDouble,
   quote,
+  
+  functionValue,
 
   ParseResult,
   toList, toList1) where
@@ -70,6 +71,14 @@ quoteId =  Atom (Id "quote")
 
 quote :: SExp -> SExp
 quote = (quoteId :!) . (:! Nil)
+
+functionValue :: SExp -> Bool
+functionValue =  pre
+  where pre (Nil) = False
+        pre (Atom (Num _)) = False
+        pre (Atom (Str _)) = False
+        pre (Atom (Id _))  = True
+        pre (form :! _) = pre form
 
 type ParseResult exp = Either String exp
 

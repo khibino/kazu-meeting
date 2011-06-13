@@ -1,5 +1,7 @@
 module Parser (
-  toExpr) where
+  toExpr,
+  toModule
+  ) where
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad.Instances ()
@@ -7,13 +9,19 @@ import Control.Monad.Instances ()
 import PrimNum (PNum)
 
 import SExpSyntax (SExp'((:!)), SExp)
-import qualified SExpSyntax as SExp (SExp'(Atom, Nil), Atom(..), toList, toList1)
+import qualified SExpSyntax as SExp
 
 import Syntax (Var, Pat(..), lambda, number, string, quote,
-               Literal'(..), Lambda'(..), Exp'(..), Bind'(..), Module'(..))
---import Syntax hiding (Literal, Lambda, Exp, Bind, Module)
+               Lambda'(..), Exp'(..), Bind'(..), Module'(..))
 
 type ParseResult exp = Either String exp
+
+(<|>) :: ParseResult exp -> ParseResult exp -> ParseResult exp
+(Left  _)   <|> b = b
+a@(Right _) <|> _ = a
+
+infixl 3 <|>
+
 errorResult :: String -> ParseResult exp
 errorResult =  Left
 
@@ -24,34 +32,36 @@ successResult :: exp -> ParseResult exp
 successResult =  return
 
 
-type Literal = Literal' PNum
+--type Literal = Literal' PNum
 type Lambda  = Lambda'  PNum
 type Exp     = Exp'  PNum
 type Bind    = Bind' PNum
 type Module  = Module' PNum
 
-toPat :: SExp -> ParseResult Pat
+type Parser e = SExp -> ParseResult e
+
+many :: Parser a -> Parser [a]
+many p = (>>= mapM p) . SExp.toList
+
+toPat :: Parser Pat
 toPat =  match
   where match (SExp.Atom (SExp.Id var)) = successResult $ PVar var
         match  form                = parseError "pattern" form
 
-toLambdaParams :: SExp -> ParseResult ([Pat], Maybe Var)
+toLambdaParams :: Parser ([Pat], Maybe Var)
 toLambdaParams sExp =
   let (pats, varArg) = SExp.toList1 sExp in
   (,)
   <$> mapM toPat pats
   <*> maybe (successResult Nothing) (fmap (Just . runPVar) . toPat) varArg
 
-toExprList :: SExp -> ParseResult [Exp]
-toExprList =  (>>= mapM toExpr) . SExp.toList
-
-toLambda :: SExp -> ParseResult Lambda
+toLambda :: Parser Lambda
 toLambda =  match
   where match (params' :! expr :! SExp.Nil) =
           uncurry lambda <$> toLambdaParams params' <*> toExpr expr
         match  form = parseError "lambda" form
 
-toExpr :: SExp -> ParseResult Exp
+toExpr :: Parser Exp
 toExpr =  rec
   where atom (SExp.Num n)  = number n
         atom (SExp.Str s)  = string s
@@ -60,21 +70,32 @@ toExpr =  rec
         rec (SExp.Atom a) = successResult $ atom a
         rec form@(SExp.Atom (SExp.Id "let") :! rest)
           | (binds' :! expr :! SExp.Nil) <- rest = Syntax.Let
-                                                   <$> (SExp.toList binds' >>= mapM toBind)
+                                                   <$> many toBind binds'
                                                    <*> rec expr
           | otherwise                     = parseError "let" form
-        rec (SExp.Atom (id'@(SExp.Id sym)) :! rest)
+        rec (SExp.Atom (SExp.Id sym) :! rest)
           | sym `elem` ["lambda", "\\"] = Syntax.Abs <$> toLambda rest
-          | _ :! _   <- rest              = Syntax.FApp  (atom id') <$> toExprList rest
-          | SExp.Nil <- rest              = successResult $ Syntax.VCall (atom id')
-        rec form@(SExp.Atom _ :! _)         = parseError "function call expression" form
-        rec (form :! SExp.Nil)  = Syntax.VCall <$> rec form
-        rec (proc :! args)      = Syntax.FApp <$> rec proc <*> toExprList args
+        rec form@(proc :! SExp.Nil) | SExp.functionValue proc = Syntax.VCall <$> rec proc
+                                    | otherwise               = parseError "varargs function call expression" form
+        rec form@(proc :! args) | SExp.functionValue proc = Syntax.FApp <$> rec proc <*> many toExpr args
+                                | otherwise               = parseError "function call expression" form
 
-toBind :: SExp -> ParseResult Bind
+
+toBind :: Parser Bind
 toBind =  dispatch
   where dispatch (pat@(SExp.Atom (SExp.Id _)) :! expr :! SExp.Nil) =
           Syntax.BPat <$> toPat pat <*> toExpr expr
         dispatch ((SExp.Atom (SExp.Id var) :! params') :! body') =
           Syntax.BFun var <$> toLambda (params' :! body')
         dispatch  form = parseError "bind" form
+
+toModule :: Parser Module
+toModule ees@(e:!es) = Module <$> modDecl e <*> many bindTop es <|>
+                       Module "Main" <$> many bindTop ees
+  where modDecl (SExp.Atom (SExp.Id "module")
+                 :! SExp.Atom (SExp.Id name') :! SExp.Nil) =
+          successResult name'
+        modDecl  form = parseError "module declaration" form
+        bindTop (SExp.Atom (SExp.Id "define") :! bind) = toBind bind
+        bindTop  form = parseError "bind at top" form
+toModule form        = parseError "module" form
