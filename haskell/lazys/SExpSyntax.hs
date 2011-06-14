@@ -1,6 +1,7 @@
 module SExpSyntax (
   Atom(..), SExp'(..), SExp,
-  list,
+  fromList,
+  fromList1,
   string, symbol,
 
   integer, double,
@@ -38,9 +39,6 @@ data SExp' a = Atom a
              deriving (Show, Eq)
 
 infixr 5 :!
-
-list :: [SExp' a] -> SExp' a
-list = foldr (:!) Nil
 
 num :: a -> SExp' (Atom a)
 num = Atom . Num
@@ -80,9 +78,19 @@ functionValue =  pre
         pre (Atom (Id _))  = True
         pre (form :! _) = pre form
 
+type List1 a = ([a], Maybe a)
+
+fromList :: [SExp' a] -> SExp' a
+fromList = foldr (:!) Nil
+
+fromList1 :: List1 (SExp' a) -> SExp' a
+fromList1 (list, last') = foldr (:!) (fromMaybe last') list
+  where fromMaybe (Just atom) = atom
+        fromMaybe Nothing     = Nil
+
 type ParseResult exp = Either String exp
 
-toList1 :: SExp -> ([SExp], Maybe SExp)
+toList1 :: SExp' a -> List1 (SExp' a)
 toList1 = rec
   where rec (e:!es)       = first (e :) (rec es)
         rec Nil           = ([], Nothing)

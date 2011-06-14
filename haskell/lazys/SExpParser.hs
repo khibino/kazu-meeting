@@ -1,5 +1,10 @@
 
-module SExpParser where
+module SExpParser (
+  parseFloat,
+  parseAtom,
+  parseExpr,
+  parseExprList
+  ) where
 
 import Prelude hiding (concat)
 import SExpSyntax (SExp)
@@ -10,6 +15,7 @@ import Text.ParserCombinators.ReadP
   (ReadP, readP_to_S, readS_to_P,
    (+++), satisfy, eof,
    get, char,
+   option,
    optional,
    skipSpaces, between, choice,
    skipMany1, many1, many)
@@ -69,12 +75,17 @@ bslash = char '\\'
 quote, dQuote, bslash :: ReadP Char
 
 
-list =  between lParen rParen exprList
+list :: ReadP SExp
+list =  Syntax.fromList1 <$>
+        between lParen rParen
+        ((,) <$> exprList <*> option Nothing (Just <$> expr))
 exprList = many expr
 
-list, exprList :: ReadP [SExp]
 
-expr = trim ((Syntax.list <$> list) +++ atom ) +++
+--list, exprList :: ReadP [SExp]
+exprList :: ReadP [SExp]
+
+expr = trim (list +++ atom) +++
        (skipSpaces *> (Syntax.quote <$> (quote *> expr)))
 
 atom = num +++ string' +++ symbol
@@ -121,18 +132,18 @@ float =  Syntax.readDouble <$> (floatNormal +++
 
 floatNormal   = decimal <++> dot <:> decimal
 floatDotFirst = concat [empty, insertZeroS, dot <:> decimal]
-floatDotLast  = concat [decimal, dotS, insertZeroS]
+--最後が dot のときは整数に解釈
+--floatDotLast  = concat [decimal, dotS, insertZeroS]
 
-floatNormal, floatDotFirst, floatDotLast :: ReadP String
+floatNormal, floatDotFirst :: ReadP String
 
 insertZero  = return '0'
 insertZeroS = insertZero <:> empty
 
 dot  = char '.'
-dotS = dot <:> empty
 
 insertZero, dot :: ReadP Char
-insertZeroS, dotS :: ReadP String
+insertZeroS :: ReadP String
 
 int :: ReadP SExp
 int =  Syntax.readInteger <$> ((decimal <* optional dot) +++
@@ -164,9 +175,6 @@ parseExpr =  readP_to_S expr
 
 parseExprList :: ReadS [SExp]
 parseExprList =  readP_to_S (exprList <* eof)
-
-test0 :: [(SExp, String)]
-test0 =  parseExpr "(let ((x 1)) x)"
 
 --
 -- end of SExpParser.hs
