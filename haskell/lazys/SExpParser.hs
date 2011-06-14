@@ -17,8 +17,9 @@ import Text.ParserCombinators.ReadP
    get, char,
    option,
    optional,
-   skipSpaces, between, choice,
-   skipMany1, many1, many)
+   --skipSpaces, 
+   between, choice,
+   skipMany, many1, many)
 import Control.Monad (ap)
 import Control.Applicative (Applicative(..),
                             (<$>), (<*>), (*>))
@@ -57,14 +58,14 @@ peek p = readS_to_P readS
             _:_ -> [((), input)]
             []  -> []
 
-skipSpaces1 :: ReadP ()
-skipSpaces1 =  skipMany1 $ satisfy isSpace
+skipSpaces' :: ReadP ()
+skipSpaces' =  skipMany $ satisfy isSpace
 
-trim :: ReadP a -> ReadP a
-trim p = skipSpaces *> p <* skipSpaces
+trimL :: ReadP a -> ReadP a
+trimL p = skipSpaces' *> p
 
-lParen = char '('
-rParen = char ')'
+lParen = trimL $ char '('
+rParen = trimL $ char ')'
 
 lParen, rParen :: ReadP Char
 
@@ -78,17 +79,16 @@ quote, dQuote, bslash :: ReadP Char
 list :: ReadP SExp
 list =  Syntax.fromList1 <$>
         between lParen rParen
-        ((,) <$> exprList <*> option Nothing (Just <$> expr))
+        ((,) <$> exprList <*> option Nothing (Just <$> (dot *> expr)))
+
+exprList :: ReadP [SExp]
 exprList = many expr
 
 
---list, exprList :: ReadP [SExp]
-exprList :: ReadP [SExp]
+expr = list +++ atom +++
+       (Syntax.quote <$> trimL (quote *> expr))
 
-expr = trim (list +++ atom) +++
-       (skipSpaces *> (Syntax.quote <$> (quote *> expr)))
-
-atom = num +++ string' +++ symbol
+atom = trimL $ num +++ string' +++ symbol
 
 expr, atom :: ReadP SExp
 
@@ -109,10 +109,10 @@ escapeSymbolCharP :: Char -> Bool
 escapeSymbolCharP =  (`elem` (['0'..'9'] ++ "()#\"' \t\r\n"))
 
 tokenSep :: ReadP ()
-tokenSep =  skipSpaces1 +++
-            peek (lParen +++ rParen +++
+tokenSep =  peek (trimL $
+                  lParen +++ rParen +++
                   dQuote +++ quote) +++
-            peek eof
+            peek (trimL eof)
 
 symbol = Syntax.symbol <$> many1 symbolChar <* tokenSep
 
@@ -164,6 +164,9 @@ hexit = digit +++ choiceC "abcdefABCDEF"
         
 sharp, digit, octit, hexit :: ReadP Char
 
+eof' :: ReadP ()
+eof' =  trimL eof
+
 parseFloat :: ReadS SExp
 parseFloat =  readP_to_S float
 
@@ -171,10 +174,23 @@ parseAtom :: ReadS SExp
 parseAtom =  readP_to_S atom
 
 parseExpr :: ReadS SExp
-parseExpr =  readP_to_S expr
+parseExpr =  readP_to_S (expr <* eof')
 
 parseExprList :: ReadS [SExp]
-parseExprList =  readP_to_S (exprList <* eof)
+parseExprList =  readP_to_S (exprList <* eof')
+
+
+-- for debug
+
+-- parseList0 = readP_to_S list
+-- t0 = parseList0 "(x)"
+
+-- parseList1 = readP_to_S $ between lParen rParen exprList
+-- t1 = parseList1 "(x)"
+
+-- parseList2 = readP_to_S $ Syntax.fromList1 <$>
+--              between lParen rParen ((,) [] <$> option Nothing (Just <$> expr))
+-- t2 = parseList2 "(x)"
 
 --
 -- end of SExpParser.hs

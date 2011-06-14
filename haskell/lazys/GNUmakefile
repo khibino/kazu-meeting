@@ -12,11 +12,15 @@ sources = \
 	Syntax.hs \
 	Parser.hs \
 	Evaluator.hs \
+
+
+tests = \
+	SExpTest.hs \
 	TestEval.hs \
 
+all_sources = $(sources) $(tests)
 
-
-targets = $(sources:.hs=.o)
+targets = $(all_sources:.hs=.o)
 
 
 %.o: %.hs
