@@ -90,13 +90,14 @@ toBind =  dispatch
           Syntax.BFun var <$> toLambda (params' :! body')
         dispatch  form = parseError "bind" form
 
-toModule :: Parser Module
-toModule ees@(e:!es) = Module <$> modDecl e <*> many bindTop es <|>
-                       Module "Main" <$> many bindTop ees
+toModule :: [SExp] -> ParseResult Module
+toModule ees@(e:es) = Module <$> modDecl e <*> topBinds es <|>
+                       Module "Main" <$> topBinds ees
   where modDecl (SExp.Atom (SExp.Id "module")
                  :! SExp.Atom (SExp.Id name') :! SExp.Nil) =
           successResult name'
         modDecl  form = parseError "module declaration" form
+        topBinds = mapM bindTop
         bindTop (SExp.Atom (SExp.Id "define") :! bind) = toBind bind
         bindTop  form = parseError "bind at top" form
-toModule form        = parseError "module" form
+toModule []         = parseError "module" SExp.Nil
