@@ -17,9 +17,9 @@ import Text.ParserCombinators.ReadP
    get, char,
    option,
    optional,
-   --skipSpaces, 
+   skipSpaces, 
    between, choice,
-   skipMany, many1, many)
+   skipMany1, many1, many)
 import Control.Monad (ap)
 import Control.Applicative (Applicative(..),
                             (<$>), (<*>), (*>))
@@ -58,11 +58,11 @@ peek p = readS_to_P readS
             _:_ -> [((), input)]
             []  -> []
 
-skipSpaces' :: ReadP ()
-skipSpaces' =  skipMany $ satisfy isSpace
+skipSpaces1 :: ReadP ()
+skipSpaces1 =  skipMany1 $ satisfy isSpace
 
 trimL :: ReadP a -> ReadP a
-trimL p = skipSpaces' *> p
+trimL p = skipSpaces *> p
 
 lParen = trimL $ char '('
 rParen = trimL $ char ')'
@@ -109,10 +109,10 @@ escapeSymbolCharP :: Char -> Bool
 escapeSymbolCharP =  (`elem` (['0'..'9'] ++ "()#\"' \t\r\n"))
 
 tokenSep :: ReadP ()
-tokenSep =  peek (trimL $
-                  lParen +++ rParen +++
-                  dQuote +++ quote) +++
-            peek (trimL eof)
+tokenSep =  peek (skipSpaces1 +++
+                  (lParen +++ rParen +++
+                   dQuote +++ quote *> return ()) +++
+                  eof)
 
 symbol = Syntax.symbol <$> many1 symbolChar <* tokenSep
 
