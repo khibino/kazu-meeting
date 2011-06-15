@@ -16,7 +16,7 @@ sources = \
 
 tests = \
 	SExpTest.hs \
-	TestEval.hs \
+	EvalTest.hs \
 
 all_sources = $(sources) $(tests)
 

@@ -1,4 +1,4 @@
-module TestEval where
+module EvalTest where
 
 import Syntax
 import Evaluator (evalExp, Result, run)
