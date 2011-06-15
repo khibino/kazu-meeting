@@ -1,9 +1,14 @@
 module EvalTest where
 
+import Control.Applicative ((<$>))
+
 import PrimNum (PNum)
+import ParseResult (ParseResult)
+import qualified SExpParser as SExp (parseExpr, parseExprList)
 import Syntax (Literal'(..), Pat(..),
                Exp, Exp'(..), Bind'(..),
                Module, Module'(..))
+import Parser (parseExpr)
 import Evaluator (evalExp, Result, run)
 
 exp0 :: Exp
@@ -20,5 +25,15 @@ mod1 =  Module "Main" [BPat
 test1 :: Result PNum
 test1 =  run [] mod1
 
---exp2 :: 
---ext2 =  
+
+runTest :: String -> ParseResult (Result PNum)
+runTest sexpr = evalExp <$>
+                (SExp.parseExpr sexpr
+                 >>= parseExpr)
+
+test2 :: ParseResult (Result PNum)
+test2 =  runTest "(let ((x 1)) x)"
+
+
+test3 :: ParseResult (Result PNum)
+test3 =  runTest "(let ((x 1) (y x)) y)"
