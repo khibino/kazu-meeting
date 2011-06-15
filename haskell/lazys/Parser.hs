@@ -6,13 +6,14 @@ module Parser (
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad.Instances ()
 
-import PrimNum (PNum)
-
 import SExpSyntax (SExp'((:!)), SExp)
 import qualified SExpSyntax as SExp
 
 import Syntax (Var, Pat(..), lambda, number, string, quote,
-               Lambda'(..), Exp'(..), Bind'(..), Module'(..))
+               Lambda,
+               Exp, Exp'(..),
+               Bind, Bind'(..),
+               Module, Module'(..))
 
 type ParseResult exp = Either String exp
 
@@ -31,12 +32,6 @@ parseError formKind = errorResult . (("Ill-formed " ++ formKind ++ "!: ") ++) . 
 successResult :: exp -> ParseResult exp
 successResult =  return
 
-
---type Literal = Literal' PNum
-type Lambda  = Lambda'  PNum
-type Exp     = Exp'  PNum
-type Bind    = Bind' PNum
-type Module  = Module' PNum
 
 type Parser e = SExp -> ParseResult e
 

@@ -2,18 +2,19 @@
 module Syntax (
   Var, Mod,
   
-  Pat(..), Literal'(..),
-  Lambda'(..), lambda,
+  Pat(..), 
+  Literal, Literal'(..),
+  Lambda, Lambda'(..), lambda,
   
-  Exp'(..),
+  Exp, Exp'(..),
   number, string, quote,
   
-  Bind'(..),
-  Module'(..),
+  Bind, Bind'(..),
+  Module, Module'(..),
   --Program(..), simpleProgram
   ) where
 
---import SExpSyntax (SExp, SExp'(..))
+import PrimNum (PNum)
 import SExpSyntax (SExp)
 
 type Var = String
@@ -70,3 +71,9 @@ data Module' n = Module { name :: Mod
 
 --simpleProgram :: Module n -> Program n
 --simpleProgram =  Program . (:[])
+
+type Literal = Literal' PNum
+type Lambda  = Lambda'  PNum
+type Exp     = Exp'  PNum
+type Bind    = Bind' PNum
+type Module  = Module' PNum
