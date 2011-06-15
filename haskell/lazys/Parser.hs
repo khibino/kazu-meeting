@@ -4,8 +4,9 @@ module Parser (
   ) where
 
 import Control.Applicative ((<$>), (<*>))
-import Control.Monad.Instances ()
+--import Control.Monad.Instances ()
 
+import ParseResult (ParseResult, (<|>), errorResult, successResult)
 import SExpSyntax (SExp'((:!)), SExp)
 import qualified SExpSyntax as SExp
 
@@ -15,22 +16,19 @@ import Syntax (Var, Pat(..), lambda, number, string, quote,
                Bind, Bind'(..),
                Module, Module'(..))
 
-type ParseResult exp = Either String exp
+-- type ParseResult exp = Either String exp
 
-(<|>) :: ParseResult exp -> ParseResult exp -> ParseResult exp
-(Left  _)   <|> b = b
-a@(Right _) <|> _ = a
+-- (<|>) :: ParseResult exp -> ParseResult exp -> ParseResult exp
+-- (Left  _)   <|> b = b
+-- a@(Right _) <|> _ = a
 
-infixl 3 <|>
+-- infixl 3 <|>
 
-errorResult :: String -> ParseResult exp
-errorResult =  Left
+-- errorResult :: String -> ParseResult exp
+-- errorResult =  Left
 
 parseError :: String -> SExp -> ParseResult exp
 parseError formKind = errorResult . (("Ill-formed " ++ formKind ++ "!: ") ++) . show
-
-successResult :: exp -> ParseResult exp
-successResult =  return
 
 
 type Parser e = SExp -> ParseResult e

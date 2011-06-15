@@ -7,6 +7,7 @@ module SExpParser (
   ) where
 
 import Prelude hiding (concat)
+import ParseResult (ParseResult, successResult, errorResult)
 import SExpSyntax (SExp)
 import qualified SExpSyntax as Syntax
 
@@ -167,17 +168,24 @@ sharp, digit, octit, hexit :: ReadP Char
 eof' :: ReadP ()
 eof' =  trimL eof
 
+readPtoParser :: Show a => ReadP a -> String -> ParseResult a
+readPtoParser p = result "S-expression parse error!" . readP_to_S p
+  where result _ ((rv, ""):_)   = successResult rv
+        result s ((rv, rest):_) = errorResult (s ++ "\nrest input: " ++ rest
+                                               ++ show rv)
+        result s []             = errorResult s
+
 parseFloat :: ReadS SExp
 parseFloat =  readP_to_S float
 
 parseAtom :: ReadS SExp
 parseAtom =  readP_to_S atom
 
-parseExpr :: ReadS SExp
-parseExpr =  readP_to_S (expr <* eof')
+parseExpr :: String -> ParseResult SExp
+parseExpr =  readPtoParser (expr <* eof')
 
-parseExprList :: ReadS [SExp]
-parseExprList =  readP_to_S (exprList <* eof')
+parseExprList :: String -> ParseResult [SExp]
+parseExprList =  readPtoParser (exprList <* eof')
 
 
 -- for debug

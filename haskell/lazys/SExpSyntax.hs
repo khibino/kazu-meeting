@@ -14,7 +14,7 @@ module SExpSyntax (
   toList, toList1) where
 
 import Control.Arrow (first)
-import Control.Monad.Instances ()
+import ParseResult (ParseResult)
 import PrimNum(PNum, fromDouble)
 
 data Atom n = Num n
@@ -87,8 +87,6 @@ fromList1 :: List1 (SExp' a) -> SExp' a
 fromList1 (list, last') = foldr (:!) (fromMaybe last') list
   where fromMaybe (Just atom) = atom
         fromMaybe Nothing     = Nil
-
-type ParseResult exp = Either String exp
 
 toList1 :: SExp' a -> List1 (SExp' a)
 toList1 = rec
