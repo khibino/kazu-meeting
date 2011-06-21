@@ -2,6 +2,7 @@
 module Evaluator where
 
 import Data.List (find)
+import PrimNum (PNum)
 import qualified Syntax
 
 mainNotFound :: a
@@ -24,15 +25,32 @@ data Value n = Lit (Literal n)
 
 data Result n = Value (Value n)
               | IO (IO (Value n))
-              | Closure { closureCode    :: Syntax.Lambda' n
+              | Closure { lambdaCode :: Syntax.Lambda' n
+                        , closureEnv :: Env n
                         , closureVarArgs :: [Result n]
-                        , closureEnv     :: Env n
                         }
-                
+              | Primitive { primCode  :: Result n -> Result n }
+
 instance Show n => Show (Result n) where
   show (Value v) = show v
   show (IO _)    = "<IO>"
   show (Closure _ _ _) = "<Closure>"
+  show (Primitive _) = "<Primitive>"
+
+prim2 :: (Result n -> Result n -> Result n) -> Result n
+prim2 f = Primitive (Primitive . f)
+
+op2num :: Num n => (n -> n -> n) -> Result n
+op2num op = prim2 fun
+  where fun x y = Value $ Lit $ Num $ getNum x `op` getNum y
+        getNum :: Num n => Result n -> n
+        getNum (Value (Lit (Num n))) = n
+        getNum  v = error ("not number: " ++ show v)
+
+-- op2bool :: Num n => (n -> n -> Bool) -> Result n -> Result n -> Result n
+-- op2bool op x y = Value $ Lit
+
+
 
 list :: [Result n] -> Result n
 list =  Value . Lit . List
@@ -42,6 +60,15 @@ data Bind n = Bind { bindKey   :: Var
                    }
 
 type Env n = [Bind n]
+
+
+primitives :: Env PNum
+primitives =
+  map (uncurry Bind)
+  [("+", op2num (+)),
+   ("-", op2num (-)),
+   ("*", op2num (*)),
+   ("/", op2num (/))]
 
 
 evalError :: String -> String -> a
@@ -75,7 +102,10 @@ paramsMatch pats values env =
   $ concatMap (uncurry patternMatch) (zip pats values)
 
 closure :: Syntax.Lambda' n -> Env n -> Result n
-closure lambda env = Closure { closureCode = lambda, closureVarArgs = [], closureEnv = env }
+closure lambda env = Closure { lambdaCode = lambda
+                             , closureEnv = env
+                             , closureVarArgs = []
+                             }
 
 bindMatch :: Env n -> Syntax.Bind' n -> [(Var, Result n)]
 bindMatch env = match
@@ -100,7 +130,7 @@ unboundVariable =  applyError . (++ ": binding not found!")
 
 apply :: Result n -> [Result n] -> Result n
 apply fun                      []   = fun
-apply (Closure lambda _ env) args =
+apply (Closure lambda env _) args =
   if   restLen > 0 then partial
   else full
     where argsLen = length args
@@ -111,15 +141,22 @@ apply (Closure lambda _ env) args =
           partial =
             let (toBind, rest) = splitAt argsLen params
                 env' = paramsMatch toBind args env in
-            Closure (lambda { Syntax.params = rest, Syntax.paramsLen = restLen }) [] env'
+            Closure { lambdaCode = lambda { Syntax.params = rest, Syntax.paramsLen = restLen }
+                    , closureEnv = env'
+                    , closureVarArgs = []
+                    }
 
           full =
             let (toBind, rest) = splitAt paramsLen args
                 env' = paramsMatch params toBind env in
             case Syntax.varParam lambda of
-              Just _  -> Closure (lambda { Syntax.params = [], Syntax.paramsLen = 0 }) rest env'
+              Just _  -> Closure { lambdaCode = lambda { Syntax.params = [], Syntax.paramsLen = 0 }
+                                 , closureEnv = env'
+                                 , closureVarArgs = rest
+                                 }
               Nothing -> apply (evalExp' env' $ Syntax.body lambda) rest
-apply _ _ = applyError "not function type"
+apply (Primitive code) (a:as)  = apply (code a) as
+apply  _                     _ = applyError "not function value"
 
 isFilled :: Syntax.Lambda' n -> Bool
 isFilled lambda | Syntax.params lambda == [] && Syntax.paramsLen lambda == 0 = True
@@ -129,11 +166,12 @@ isFilled lambda | Syntax.params lambda == [] && Syntax.paramsLen lambda == 0 = T
 
 -- 可変引数関数の呼び出し
 vcall :: Result n -> Result n
-vcall (Closure lambda varArgs env)
+vcall (Closure lambda env varArgs)
   | Just var <- Syntax.varParam lambda, isFilled lambda =
     evalExp' (Bind var (list varArgs) : env) (Syntax.body lambda)
   | otherwise = error "Not variable param or not filled param closure is passed vcall!"
-vcall _ =  error "Not closure is passwd vcall!"
+vcall (Primitive  _) = error "Not implemeted. - primitive vcall"
+vcall _ =  error "Not closure is passed vcall!"
 
 
 evalLit :: Syntax.Literal' n -> Literal n
@@ -156,12 +194,12 @@ evalExp' env = eval
         eval (Syntax.Abs lambda) = closure lambda env
         eval (Syntax.Let binds expr) = evalExp' (letEnv env binds) expr
 
-evalExp :: Syntax.Exp' n -> Result n
-evalExp =  evalExp' []
+evalExp :: Syntax.Exp' PNum -> Result PNum
+evalExp =  evalExp' primitives
 
 qualifiedImport :: Env n -> Syntax.Module' n -> Env n
 qualifiedImport env mod' =
   snd $ topEnv (Syntax.name mod') env (Syntax.binds mod')
 
-run :: Env n -> Syntax.Module' n -> Result n
-run env mod' =  evalExp' (qualifiedImport env mod') (Syntax.EVar "Main.main")
+run :: Env PNum -> Syntax.Module' PNum -> Result PNum
+run env mod' =  evalExp' (primitives ++ qualifiedImport env mod') (Syntax.EVar "Main.main")

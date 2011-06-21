@@ -37,3 +37,14 @@ test2 =  runTest "(let ((x 1)) x)"
 
 test3 :: ParseResult (Result PNum)
 test3 =  runTest "(let ((x 1) (y x)) y)"
+
+test4 :: ParseResult (Result PNum)
+test4 =  runTest "(let ((x 3)) (lambda (y) (y x)))"
+
+test5 :: ParseResult (Result PNum)
+test5 =  runTest "(let ((x 1) (y (+ x 3)) (z (/ y 5))) z)"
+
+test6 =  runTest "(let (((tru x y) x) \
+                     \ ((fls x y) y) \
+                     \ ((if p x y) (p x y))) \
+                   \ (if fls (+ 2 3) (* 2 3)))"
