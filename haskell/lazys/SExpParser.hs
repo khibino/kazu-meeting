@@ -18,9 +18,9 @@ import Text.ParserCombinators.ReadP
    get, char,
    option,
    optional,
-   skipSpaces, 
    between, choice,
-   skipMany1, many1, many)
+   skipMany1, skipMany,
+   many1, many)
 import Control.Monad (ap)
 import Control.Applicative (Applicative(..),
                             (<$>), (<*>), (*>))
@@ -29,11 +29,14 @@ instance Applicative ReadP where
   pure  = return
   (<*>) = ap
 
+toReadP :: a -> ReadP a
+toReadP =  return
+
 choiceC :: String -> ReadP Char
 choiceC =  choice . map char
 
 empty :: ReadP [a]
-empty =  return []
+empty =  toReadP []
 
 cons c cs = (:) <$> c <*> cs
 (<:>) = cons
@@ -59,11 +62,29 @@ peek p = readS_to_P readS
             _:_ -> [((), input)]
             []  -> []
 
-skipSpaces1 :: ReadP ()
-skipSpaces1 =  skipMany1 $ satisfy isSpace
+satisfy_ :: (Char -> Bool) -> ReadP ()
+satisfy_ =  (*> toReadP ()) . satisfy
+
+char_ :: Char -> ReadP ()
+char_ =  (*> toReadP ()) . char
+
+semi :: ReadP Char
+semi =  char ';'
+
+comment :: ReadP ()
+comment =  semi *> skipMany (satisfy (/= '\n')) *> char_ '\n' 
+
+blank :: ReadP ()
+blank =  satisfy_ isSpace +++ comment
+
+skipBlanks1 :: ReadP ()
+skipBlanks1 =  skipMany1 blank
+
+skipBlanks :: ReadP ()
+skipBlanks =  skipMany blank
 
 trimL :: ReadP a -> ReadP a
-trimL p = skipSpaces *> p
+trimL p = skipBlanks *> p
 
 lParen = trimL $ char '('
 rParen = trimL $ char ')'
@@ -110,7 +131,7 @@ escapeSymbolCharP :: Char -> Bool
 escapeSymbolCharP =  (`elem` (['0'..'9'] ++ "()#\"' \t\r\n"))
 
 tokenSep :: ReadP ()
-tokenSep =  peek (skipSpaces1 +++
+tokenSep =  peek (skipBlanks1 +++
                   (lParen +++ rParen +++
                    dQuote +++ quote *> return ()) +++
                   eof)
