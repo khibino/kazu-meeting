@@ -40,15 +40,25 @@ instance Show n => Show (Result n) where
 prim2 :: (Result n -> Result n -> Result n) -> Result n
 prim2 f = Primitive (Primitive . f)
 
+getNum :: Num n => Result n -> n
+getNum (Value (Lit (Num n))) = n
+getNum  v = error ("not number: " ++ show v)
+
 op2num :: Num n => (n -> n -> n) -> Result n
 op2num op = prim2 fun
   where fun x y = Value $ Lit $ Num $ getNum x `op` getNum y
-        getNum :: Num n => Result n -> n
-        getNum (Value (Lit (Num n))) = n
-        getNum  v = error ("not number: " ++ show v)
 
--- op2bool :: Num n => (n -> n -> Bool) -> Result n -> Result n -> Result n
--- op2bool op x y = Value $ Lit
+true  = closure (Syntax.lambda (map Syntax.PVar [ "t", "f"]) Nothing (Syntax.EVar "t")) []
+false = closure (Syntax.lambda (map Syntax.PVar [ "t", "f"]) Nothing (Syntax.EVar "f")) []
+
+if' = closure (Syntax.lambda (map Syntax.PVar ["l", "m", "n"]) Nothing
+               (Syntax.FApp (Syntax.EVar "l") (map Syntax.EVar ["m", "n"]))) []
+
+true, false, if' :: Result n
+
+op2bool :: Num n => (n -> n -> Bool) -> Result n
+op2bool op = prim2 fun
+  where fun x y = if getNum x `op` getNum y then true else false
 
 
 
@@ -68,7 +78,18 @@ primitives =
   [("+", op2num (+)),
    ("-", op2num (-)),
    ("*", op2num (*)),
-   ("/", op2num (/))]
+   ("/", op2num (/)),
+   
+   ("if", if'),
+   ("true", true),
+   ("false", false),
+   
+   ("=", op2bool (==)),
+   (">=", op2bool (>=)),
+   ("<=", op2bool (<=)),
+   (">", op2bool (>)),
+   ("<", op2bool (<))
+   ]
 
 
 evalError :: String -> String -> a

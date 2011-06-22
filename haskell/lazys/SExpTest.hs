@@ -5,8 +5,7 @@ module SExpTest (
 
 import ParseResult (ParseResult)
 import SExpSyntax (SExp)
-import SExpParser (parseFloat, parseAtom,
-                   parseExpr, parseExprList)
+import SExpParser (parseExpr)
 
 --parseE = parseExpr
 

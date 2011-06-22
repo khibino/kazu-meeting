@@ -2,6 +2,7 @@ module PrimNum (
   PNum,
   fromDouble) where
 
+import Data.Ord(comparing)
 import Data.Ratio(numerator, denominator)
 
 data PNum = I Integer
@@ -19,6 +20,11 @@ instance Eq PNum where
   F a == F b = a == b
   a   == b   = upCast a == upCast b
   
+instance Ord PNum where
+  compare (I a) (I b) = compare a b
+  compare (F a) (F b) = compare a b
+  compare    a     b  = comparing upCast a b
+
 instance Show PNum where
   show (I a) = show a
   show (F a) = show a

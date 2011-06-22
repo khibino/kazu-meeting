@@ -4,7 +4,7 @@ import Control.Applicative ((<$>))
 
 import PrimNum (PNum)
 import ParseResult (ParseResult)
-import qualified SExpParser as SExp (parseExpr, parseExprList)
+import qualified SExpParser as SExp (parseExpr)
 import Syntax (Literal'(..), Pat(..),
                Exp, Exp'(..), Bind'(..),
                Module, Module'(..))
@@ -44,7 +44,11 @@ test4 =  runTest "(let ((x 3)) (lambda (y) (y x)))"
 test5 :: ParseResult (Result PNum)
 test5 =  runTest "(let ((x 1) (y (+ x 3)) (z (/ y 5))) z)"
 
+test6 :: ParseResult (Result PNum)
 test6 =  runTest "(let (((tru x y) x) \
                      \ ((fls x y) y) \
                      \ ((if p x y) (p x y))) \
                    \ (if fls (+ 2 3) (* 2 3)))"
+
+test7 :: ParseResult (Result PNum)
+test7 =  runTest "(if (< 2 1) (+ 3 5) (* 3 5))"
